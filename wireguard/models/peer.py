@@ -1,9 +1,10 @@
 
 import os
 
-from subnet import ip_network
+from subnet import ip_network, IPv4Network, IPv6Network
 
 from .base import WireGuardBase
+from ..utils import generate_key
 
 
 KEEPALIVE_MINIMUM = 5  # If you really need a keepalive value less than this, override the class
@@ -13,6 +14,7 @@ class WireGuardPeer(WireGuardBase):
 
     endpoint = None
     server_pubkey = None
+    _preshared_key = None
     _keepalive = None
     _routable_ips = set()
 
@@ -25,6 +27,7 @@ class WireGuardPeer(WireGuardBase):
                  endpoint=None,
                  routable_ips=None,
                  server_pubkey=None,
+                 preshared_key=None,
                  keepalive=None,
                  config_path=None,
                  interface=None,
@@ -42,22 +45,27 @@ class WireGuardPeer(WireGuardBase):
             server=server,
         )
 
-        self.server_pubkey = server_pubkey
         self.endpoint = endpoint
-        self.keepalive = keepalive
+        self.server_pubkey = server_pubkey
+        self.preshared_key = preshared_key
 
-        if not isinstance(routable_ips, list):
-            routable_ips = [routable_ips]
-        for ip in routable_ips:
-            self.add_routable_ip(ip)
+        if keepalive is not None:
+            self.keepalive = keepalive
+
+        if routable_ips:
+            if not isinstance(routable_ips, list):
+                routable_ips = [routable_ips]
+            for ip in routable_ips:
+                self.add_routable_ip(ip)
 
     def add_routable_ip(self, ip):
         """
         Adds a routable IP to this config
         """
 
-        ip = ip_network(ip)
-        self._routable_ips.add(ip)
+        if not isinstance(ip, (IPv4Network, IPv6Network)):
+            ip = ip_network(ip)
+        self._routable_ips.add(str(ip))
 
     @property
     def routable_ips(self):
@@ -66,10 +74,28 @@ class WireGuardPeer(WireGuardBase):
         """
 
         routable_ips = self._routable_ips.copy()
-        if self.subnet not in self.routable_ips:
-            routable_ips.add(self.subnet)
+        if str(self.subnet) not in routable_ips:
+            routable_ips.add(str(self.subnet))
 
         return routable_ips
+
+    @property
+    def preshared_key(self):
+        """
+        Returns the preshared_key value
+        """
+        return self._preshared_key
+
+    @preshared_key.setter
+    def preshared_key(self, value):
+        """
+        Sets the preshared_key value
+        """
+
+        if not isinstance(value, str) and value:
+            value = generate_key()
+
+        self._preshared_key = value
 
     @property
     def keepalive(self):
@@ -91,16 +117,16 @@ class WireGuardPeer(WireGuardBase):
             value = KEEPALIVE_MINIMUM
 
         self._keepalive = value
-      
+
     @property
     def config(self):
         """
-            Return the wireguard config file for this gateway
+            Return the wireguard config file for this peer
         """
 
-        allowed_ips = join(', ', self.routable_ips)
+        allowed_ips = ', '.join(self.routable_ips)
 
-        return f'''
+        config = f'''
 
 [Interface]
 ListenPort = {self.port}
@@ -112,8 +138,18 @@ SaveConfig = false
 Endpoint = {self.endpoint}:{self.port}
 AllowedIPs = {allowed_ips}
 PublicKey = {self.server_pubkey}
+'''
+
+        if self.keepalive:
+            config += f'''
 PersistentKeepalive = {self.keepalive}
 '''
+        if self.preshared_key:
+            config += f'''
+PresharedKey = {self.preshared_key}
+'''
+
+        return config
 
     @property
     def serverside_config(self):
@@ -128,6 +164,13 @@ PersistentKeepalive = {self.keepalive}
 PublicKey = {self.public_key}
 AllowedIPs = {self.address}/{self.address.max_prefixlen}
 '''
+
+        if self.preshared_key:
+            config += f'''
+PresharedKey = {self.preshared_key}
+'''
+
+        return config
 
     @property
     def config_filename(self):

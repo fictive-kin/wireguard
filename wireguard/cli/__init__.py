@@ -80,10 +80,11 @@ def server(name,
 @click.option('-a', '--address', help='The IP that the peer should use within the VPN')
 @click.option('-P', '--private-key', help='The private key to use for the peer')
 @click.option('-p', '--port', help='The port that the server is listening on')
-@click.option('-e', '--endpoint', help='The public domain name for the VPN server')
-@click.option('-S', '--server-pubkey', help='The public key of the VPN server')
+@click.option('-e', '--endpoint', help='The public domain name for the VPN server', prompt=True)
+@click.option('-S', '--server-pubkey', help='The public key of the VPN server', prompt=True)
 @click.option('-r', '--routable-ip', help='An addition IP range that should route through the VPN', multiple=True)
 @click.option('-k', '--keepalive', help='How often the peer should contact the server, in seconds', type=int)
+@click.option('-K', '--preshared-key', help='A pre-shared key for this peer, for post-quantum resistance')
 @click.option('-c', '--config-path', help='The path to the config files')
 @click.option('-i', '--interface', help='The interface name for this VPN')
 @click.option('-w', '--write', help='Write out the config file', is_flag=True)
@@ -94,7 +95,8 @@ def peer(name,
          port=None,
          endpoint=None,
          server_pubkey=None,
-         routable_ips=None,
+         routable_ip=None,
+         preshared_key=None,
          keepalive=None,
          config_path=None,
          interface=None,
@@ -112,7 +114,8 @@ def peer(name,
         port=port,
         endpoint=endpoint,
         server_pubkey=server_pubkey,
-        routable_ips=routable_ips,
+        routable_ips=routable_ip,
+        preshared_key=preshared_key,
         keepalive=keepalive,
         config_path=config_path,
         interface=interface,
