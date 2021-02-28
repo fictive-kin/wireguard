@@ -1,0 +1,11 @@
+
+dist
+venv
+*.pyc
+*.egg-info
+
+.coverage
+.pytest_cache
+.tox
+
+_build
