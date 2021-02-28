@@ -21,12 +21,28 @@ Setup a WireGuard server::
     server.write_config()
 
 
-Create a client::
+Create a client within the previous server::
 
-    peer = server.new_peer('my-client')
+    peer = server.peer('my-client')
 
     # Copy this outputted config to the client device
     print(peer.config)
 
     # Rewrite the server config file including the newly created peer
     server.write_config()
+
+
+Create a standalone client::
+
+    from wireguard import WireGuardPeer
+
+    peer = WireGuardPeer('my-client', '192.168.24.0/24', address='192.168.24.45')
+
+    # Write out the peer config to the default location: /etc/wireguard/wg0.conf
+    peer.write_config()
+
+
+**Note**: Both the server and peer config are named the same by default. This is because they would
+typically be on different machines and would not interfere with one another. Be aware of this when
+generating peer configs on a server node, or on any node that has a pre-existing wireguard config
+at the default file location.
