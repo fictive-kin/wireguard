@@ -5,9 +5,15 @@ from subnet import ip_network, ip_address
 from ..utils import generate_key, public_key
 
 
-CONFIG_PATH = '/etc/wireguard'
-INTERFACE = 'wg0'
-PORT = 51820
+# If you really need a keepalive value less than this, you might want to rethink your life
+KEEPALIVE_MINIMUM = 5
+
+MAX_ADDRESS_RETRIES = 100
+MAX_PRIVKEY_RETRIES = 10  # If we can't get an used privkey in 10 tries, we're screwed
+
+DEFAULT_CONFIG_PATH = '/etc/wireguard'
+DEFAULT_INTERFACE = 'wg0'
+DEFAULT_PORT = 51820
 
 
 class WireGuardBase:
@@ -19,7 +25,6 @@ class WireGuardBase:
     _private_key = None
     config_path = None
     interface = None
-    server = None
 
     def __init__(self,
                  name,
@@ -29,7 +34,6 @@ class WireGuardBase:
                  private_key=None,
                  config_path=None,
                  interface=None,
-                 server=None,
         ):
 
         self.name = name
@@ -43,11 +47,9 @@ class WireGuardBase:
 
         self._private_key = private_key
 
-        self.port = int(port) if port is not None else PORT
-        self.config_path = config_path if config_path is not None else CONFIG_PATH
-        self.interface = interface if interface is not None else INTERFACE
-
-        self.server = server
+        self.port = int(port) if port is not None else DEFAULT_PORT
+        self.config_path = config_path if config_path is not None else DEFAULT_CONFIG_PATH
+        self.interface = interface if interface is not None else DEFAULT_INTERFACE
 
 
     @property
@@ -75,31 +77,18 @@ class WireGuardBase:
     @property
     def private_key(self):
         """
-        Returns the WireGuard private key associated with this client
+        Returns the WireGuard private key associated with this object
         """
 
         if self._private_key is not None:
             return self._private_key
 
         self._private_key = generate_key()
-        if not self.server:
-            return self._private_key
-
-        count = 0
-        while count < MAXIMUM_KEY_RETRIES:
-            self._private_key = generate_key()
-            if self._private_key not in self.server.client_keys:
-                break
-            count += 1
-
-        if count >= MAXIMUM_KEY_RETRIES:
-            raise WireguardKeyGenerationError()
-
         return self._private_key
 
     @property
     def public_key(self):
         """
-        Returns the WireGuard public key associated with this gateway
+        Returns the WireGuard public key associated with this object
         """
         return public_key(self.private_key)

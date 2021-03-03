@@ -26,7 +26,7 @@ Create a client within the previous server::
     peer = server.peer('my-client')
 
     # Copy this outputted config to the client device
-    print(peer.config)
+    print(peer.config())
 
     # Rewrite the server config file including the newly created peer
     server.write_config()

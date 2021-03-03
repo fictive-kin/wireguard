@@ -3,11 +3,11 @@ import os
 
 from subnet import ip_network, IPv4Network, IPv6Network
 
-from .base import WireGuardBase
+from .base import (
+    WireGuardBase,
+    KEEPALIVE_MINIMUM,
+)
 from ..utils import generate_key
-
-
-KEEPALIVE_MINIMUM = 5  # If you really need a keepalive value less than this, override the class
 
 
 class WireGuardPeer(WireGuardBase):
@@ -17,6 +17,8 @@ class WireGuardPeer(WireGuardBase):
     _preshared_key = None
     _keepalive = None
     _routable_ips = set()
+
+    server = None
 
     def __init__(self,
                  name,
@@ -42,8 +44,9 @@ class WireGuardPeer(WireGuardBase):
             private_key=private_key,
             config_path=config_path,
             interface=interface,
-            server=server,
         )
+
+        self.server = server
 
         self.endpoint = endpoint
         self.server_pubkey = server_pubkey
@@ -57,6 +60,31 @@ class WireGuardPeer(WireGuardBase):
                 routable_ips = [routable_ips]
             for ip in routable_ips:
                 self.add_routable_ip(ip)
+
+    @property
+    def private_key(self):
+        """
+        Returns the WireGuard private key associated with this client
+        """
+
+        if self._private_key is not None:
+            return self._private_key
+
+        self._private_key = generate_key()
+        if not self.server:
+            return self._private_key
+
+        count = 0
+        while count < MAXIMUM_KEY_RETRIES:
+            self._private_key = generate_key()
+            if self._private_key not in self.server.client_keys:
+                break
+            count += 1
+
+        if count >= MAXIMUM_KEY_RETRIES:
+            raise WireguardKeyGenerationError()
+
+        return self._private_key
 
     def add_routable_ip(self, ip):
         """
