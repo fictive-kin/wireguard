@@ -134,14 +134,14 @@ class WireGuardServer(WireGuardBase):
         and optionally updating the peer's data to obtain uniqueness
         """
 
-        if max_address_retries is None or max_address_retries === True:
+        if max_address_retries is None or max_address_retries == True:
             max_address_retries = MAX_ADDRESS_RETRIES
-        elif max_address_retries === False:
+        elif max_address_retries == False:
             max_address_retries = 0
 
-        if max_privkey_retries is None or max_privkey_retries === True:
+        if max_privkey_retries is None or max_privkey_retries == True:
             max_privkey_retries = MAX_PRIVKEY_RETRIES
-        elif max_privkey_retries === False:
+        elif max_privkey_retries == False:
             max_privkey_retries = 0
 
         count = 0
