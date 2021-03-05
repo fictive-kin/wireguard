@@ -107,6 +107,16 @@ class WireGuardPeer(WireGuardBase):
 
         return routable_ips
 
+    @routable_ips.setter
+    def routable_ips(self, value):
+        self._routable_ips = set()
+        if value is not None:
+            if not isinstance(value, list):
+                value = [value]
+
+            for ip in value:
+                self.add_routable_ip(ip)
+
     @property
     def preshared_key(self):
         """
@@ -138,15 +148,15 @@ class WireGuardPeer(WireGuardBase):
         Sets the keepalive value
         """
 
-        if not isinstance(value, int):
-            raise ValueError('Keepalive value must be an integer')
+        if value is not None:
+            if not isinstance(value, int):
+                raise ValueError('Keepalive value must be an integer')
 
-        if value < KEEPALIVE_MINIMUM:
-            value = KEEPALIVE_MINIMUM
+            if value < KEEPALIVE_MINIMUM:
+                value = KEEPALIVE_MINIMUM
 
         self._keepalive = value
 
-    @property
     def config(self):
         """
             Return the wireguard config file for this peer
@@ -179,7 +189,6 @@ PresharedKey = {self.preshared_key}
 
         return config
 
-    @property
     def serverside_config(self):
         """
         Return the server peer config for this client
