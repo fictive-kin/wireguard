@@ -86,6 +86,13 @@ class WireGuardBase:
         self._private_key = generate_key()
         return self._private_key
 
+    @private_key.setter
+    def private_key(self, value):
+        if value is None:
+            raise ValueError('Private key cannot be empty')
+
+        self._private_key = value
+
     @property
     def public_key(self):
         """

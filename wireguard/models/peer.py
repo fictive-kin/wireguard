@@ -86,6 +86,13 @@ class WireGuardPeer(WireGuardBase):
 
         return self._private_key
 
+    @private_key.setter
+    def private_key(self, value):
+        if value is None:
+            raise ValueError('Private key cannot be empty')
+
+        self._private_key = value
+
     def add_routable_ip(self, ip):
         """
         Adds a routable IP to this config
