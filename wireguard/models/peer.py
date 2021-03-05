@@ -177,7 +177,6 @@ class WireGuardPeer(WireGuardBase):
 ListenPort = {self.port}
 PrivateKey = {self.private_key}
 Address = {self.address}/{self.address.max_prefixlen}
-SaveConfig = false
 
 [Peer]
 Endpoint = {self.endpoint}:{self.port}
