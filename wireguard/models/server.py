@@ -7,7 +7,6 @@ from subnet import (
     ip_address,
 )
 
-
 from .base import (
     WireGuardBase,
     MAX_ADDRESS_RETRIES,
@@ -92,12 +91,23 @@ class WireGuardServer(WireGuardBase):
         return [peer.private_key for peer in self.peers]
 
     @property
+    def _default_peers_config_file(self):
+        return os.path.join(
+                self.config_path,
+                f'{self.interface}-peers.conf',
+            )
+
+    @property
     def peers_config_file(self):
         """
         Returns the peers config file name, if appropriate
         """
 
-        return self._peers_config_file
+        if isinstance(self._peers_config_file, str):
+            return self._peers_config_file
+        if self._peers_config_file == True:
+            return self._default_peers_config_filename
+        return None
 
     @peers_config_file.setter
     def peers_config_file(self, value):
@@ -105,13 +115,10 @@ class WireGuardServer(WireGuardBase):
         Sets the peers config file
         """
 
-        if isinstance(value, bool):
-            self._peers_config_file = os.path.join(
-                self.config_path,
-                f'{self.interface}-peers.conf',
-            )
+        if value == True:
+            self._peers_config_file = self._default_peers_config_filename
 
-        elif not isinstance(value, str):
+        elif not isinstance(value, str) and value is not None:
             raise ValueError('Invalid value for peers_config_file: %s' % value)
 
         else:
@@ -245,8 +252,8 @@ PostUp = wg addconf %i {self.peers_config_file}
         """
 
         config = ''
-        for peer in self.peers.values():
-            config += peer.server_config()
+        for peer in self.peers:
+            config += peer.serverside_config()
 
         return config
 
