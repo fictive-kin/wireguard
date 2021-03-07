@@ -1,6 +1,13 @@
 
 import os
 
+from subnet import (
+    IPv4Address,
+    IPv6Address,
+    ip_address,
+)
+
+
 from .base import (
     WireGuardBase,
     MAX_ADDRESS_RETRIES,
@@ -57,7 +64,7 @@ class WireGuardServer(WireGuardBase):
         if item == self.private_key:
             return True
 
-        return item in [peer.private_key for peer in self.peers]
+        return item in self.peers_privkeys
 
     def address_exists(self, item):
         """
@@ -70,7 +77,19 @@ class WireGuardServer(WireGuardBase):
         if item == self.address:
             return True
 
-        return item in [peer.address for peer in self.peers]
+        return item in self.peers_addresses
+
+    @property
+    def peers_addresses(self):
+        if not self.peers:
+            return []
+        return [peer.address for peer in self.peers]
+
+    @property
+    def peers_privkeys(self):
+        if not self.peers:
+            return []
+        return [peer.private_key for peer in self.peers]
 
     @property
     def peers_config_file(self):
@@ -134,37 +153,56 @@ class WireGuardServer(WireGuardBase):
         and optionally updating the peer's data to obtain uniqueness
         """
 
+        if (self.unique_address(peer, max_address_retries=max_address_retries) and
+            self.unique_privkey(peer, max_privkey_retries=max_privkey_retries)):
+            self.peers.append(peer)
+
+        else:
+            raise ValueError('Could not add peer to this server. It is not unique.')
+
+    def unique_address(self, peer, max_address_retries=None):
+        if peer in self.peers:
+            return True
+
         if max_address_retries is None or max_address_retries == True:
             max_address_retries = MAX_ADDRESS_RETRIES
-        elif max_address_retries == False:
-            max_address_retries = 0
+
+        if not max_address_retries:
+            if self.address_exists(peer.address):
+                raise ValueError(f'IP address is already used on this server: {peer.name} ({peer.address})')
+
+        else:
+            count = 0
+            while self.address_exists(peer.address):
+                if count >= max_address_retries:
+                    raise ValueError(f'Too many retries to obtain an unused IP address: {peer.name}')
+
+                peer.address = self.subnet.random_ip()
+                count += 1
+
+        return True
+
+    def unique_privkey(self, peer, max_privkey_retries=None):
+        if peer in self.peers:
+            return True
 
         if max_privkey_retries is None or max_privkey_retries == True:
             max_privkey_retries = MAX_PRIVKEY_RETRIES
-        elif max_privkey_retries == False:
-            max_privkey_retries = 0
 
-        count = 0
-        while self.address_exists(peer.address):
-            if max_address_retries == 0:
-                raise ValueError(f'IP address is already used on this server: {peer.name} ({peer.address})')
-            elif count >= max_address_retries:
-                raise ValueError(f'Too many retries to obtain an unused IP address: {peer.name}')
-
-            peer.address = self.subnet.random_ip()
-            count += 1
-
-        count = 0
-        while self.privkey_exists(peer.private_key):
-            if max_privkey_retries:
+        if not max_privkey_retries:
+            if self.privkey_exists(peer.private_key):
                 raise ValueError(f'Private key is already used on this server: {peer.name}')
-            elif count >= max_privkey_retries:
-                raise ValueError(f'Too many retries to obtain an unused private key: {peer.name}')
 
-            peer.private_key = generate_key()
-            count += 1
+        else:
+            count = 0
+            while self.privkey_exists(peer.private_key):
+                if count >= max_privkey_retries:
+                    raise ValueError(f'Too many retries to obtain an unused private key: {peer.name}')
 
-        self.peers.append(peer)
+                peer.private_key = generate_key()
+                count += 1
+
+        return True
 
     def config(self):
         """

@@ -46,7 +46,13 @@ class WireGuardPeer(WireGuardBase):
             interface=interface,
         )
 
-        self.server = server
+        if server:
+            if address and address not in server.subnet:
+                raise ValueError('Peer address must be in the server subnet')
+            self.server = server
+
+        elif address and address not in self.subnet:
+            raise ValueError('Peer address must be in the specified subnet')
 
         self.endpoint = endpoint
         self.server_pubkey = server_pubkey
@@ -60,38 +66,6 @@ class WireGuardPeer(WireGuardBase):
                 routable_ips = [routable_ips]
             for ip in routable_ips:
                 self.add_routable_ip(ip)
-
-    @property
-    def private_key(self):
-        """
-        Returns the WireGuard private key associated with this client
-        """
-
-        if self._private_key is not None:
-            return self._private_key
-
-        self._private_key = generate_key()
-        if not self.server:
-            return self._private_key
-
-        count = 0
-        while count < MAXIMUM_KEY_RETRIES:
-            self._private_key = generate_key()
-            if self._private_key not in self.server.client_keys:
-                break
-            count += 1
-
-        if count >= MAXIMUM_KEY_RETRIES:
-            raise WireguardKeyGenerationError()
-
-        return self._private_key
-
-    @private_key.setter
-    def private_key(self, value):
-        if value is None:
-            raise ValueError('Private key cannot be empty')
-
-        self._private_key = value
 
     def add_routable_ip(self, ip):
         """
