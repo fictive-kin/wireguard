@@ -31,6 +31,7 @@ class WireGuardServer(WireGuardBase):
                  interface=None,
                  peers_config_file=None,
                  nat_traversal_interface=None,
+                 inbound_subnets=None,
             ):
 
         super().__init__(
@@ -41,6 +42,7 @@ class WireGuardServer(WireGuardBase):
             port=port,
             config_path=config_path,
             interface=interface,
+            inbound_subnets=inbound_subnets,
         )
 
         if peers_config_file:
@@ -129,7 +131,8 @@ class WireGuardServer(WireGuardBase):
              address=None,
              private_key=None,
              port=None,
-             routable_ips=None,
+             inbound_subnets=None,
+             outbound_subnets=None,
              keepalive=None,
              cls=None,
         ):
@@ -142,7 +145,8 @@ class WireGuardServer(WireGuardBase):
             self.subnet,
             address=address,
             private_key=private_key,
-            routable_ips=routable_ips,
+            inbound_subnets=inbound_subnets,
+            outbound_subnets=outbound_subnets,
             keepalive=keepalive,
             config_path=config_path if config_path else self.config_path,
             interface=interface if interface else self.interface,

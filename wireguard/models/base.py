@@ -25,6 +25,7 @@ class WireGuardBase:
     _private_key = None
     config_path = None
     interface = None
+    _inbound_subnets = set()
 
     def __init__(self,
                  name,
@@ -34,23 +35,71 @@ class WireGuardBase:
                  private_key=None,
                  config_path=None,
                  interface=None,
+                 inbound_subnets=None,
         ):
 
         self.name = name
         self.subnet = ip_network(subnet)
 
         if address is None:
-            self._address = self.subnet.random_ip()
+            self.address = self.subnet.random_ip()
 
         else:
             self.address = address
 
-        self._private_key = private_key
+        if private_key:
+            self.private_key = private_key
 
         self.port = int(port) if port is not None else DEFAULT_PORT
         self.config_path = config_path if config_path is not None else DEFAULT_CONFIG_PATH
         self.interface = interface if interface is not None else DEFAULT_INTERFACE
 
+        self.inbound_subnets = inbound_subnets
+
+    def add_inbound_subnet(self, ip):
+        """
+        Adds subnets that the remote peer should route to this peer
+
+        IP address objects/strings will automatically be set to `/32` or `/128` subnets
+        by `ip_network()` when no netmask is specified. No special handling is required.
+
+        While this will restrict the routing to unique subnets, it will not merge
+        adjacent subnets into a single subnet value, even when possible.
+        """
+
+        if not isinstace(ip, list):
+            ip = [ip]
+        for ip in ips:
+            if not isinstance(ip, (IPv4Network, IPv6Network)):
+                ip = ip_network(ip)
+            self._inbound_subnets.add(ip)
+
+    @property
+    def inbound_subnets(self):
+        """
+        Returns the subnets that the remote peer should route to this peer
+        """
+
+        subnets = self._inbound_subnets.copy()
+        local_subnet = ip_network(self.address)
+        if local_network not in subnets:
+            subnets.add(local_network)
+
+        return subnets
+
+    @inbound_subnets.setter
+    def inbound_subnets(self, value):
+        """
+        Set the subnets that the remote peer should route to this peer
+        """
+
+        self._inbound_subnets = set()
+        if value is not None:
+            if not isinstance(value, list):
+                value = [value]
+
+            for ip in value:
+                self.add_inbound_subnet(ip)
 
     @property
     def address(self):

@@ -16,18 +16,20 @@ class WireGuardPeer(WireGuardBase):
     server_pubkey = None
     _preshared_key = None
     _keepalive = None
-    _routable_ips = set()
+    _outbound_subnets = set()
+    _inbound_subnets = set()
 
     server = None
 
     def __init__(self,
                  name,
-                 subnet,
+                 subnet=None,
                  address=None,
                  private_key=None,
                  port=None,
                  endpoint=None,
-                 routable_ips=None,
+                 outbound_subnets=None,
+                 inbound_subnets=None,
                  server_pubkey=None,
                  preshared_key=None,
                  keepalive=None,
@@ -35,6 +37,14 @@ class WireGuardPeer(WireGuardBase):
                  interface=None,
                  server=None,
             ):
+
+        if not subnet:
+            if server and server.subnet:
+                subnet = server.subnet
+            else:
+                raise ValueError(
+                    'When a subnet is not directly specified, a server must be provided.')
+
 
         super().__init__(
             name,
@@ -44,15 +54,11 @@ class WireGuardPeer(WireGuardBase):
             private_key=private_key,
             config_path=config_path,
             interface=interface,
+            inbound_subnets=inbound_subnets,
         )
 
         if server:
-            if address and address not in server.subnet:
-                raise ValueError('Peer address must be in the server subnet')
             self.server = server
-
-        elif address and address not in self.subnet:
-            raise ValueError('Peer address must be in the specified subnet')
 
         self.endpoint = endpoint
         self.server_pubkey = server_pubkey
@@ -61,42 +67,55 @@ class WireGuardPeer(WireGuardBase):
         if keepalive is not None:
             self.keepalive = keepalive
 
-        if routable_ips:
-            if not isinstance(routable_ips, list):
-                routable_ips = [routable_ips]
-            for ip in routable_ips:
-                self.add_routable_ip(ip)
+        self.outbound_subnets = outbound_subnets
 
-    def add_routable_ip(self, ip):
+    def add_outbound_subnet(self, ips):
         """
-        Adds a routable IP to this config
+        Adds subnets that should route to the server
+
+        IP address objects/strings will automatically be set to `/32` or `/128` subnets
+        by `ip_network()` when no netmask is specified. No special handling is required.
+
+        While this will restrict the routing to unique subnets, it will not merge
+        adjacent subnets into a single subnet value, even when possible.
         """
 
-        if not isinstance(ip, (IPv4Network, IPv6Network)):
-            ip = ip_network(ip)
-        self._routable_ips.add(str(ip))
+        if not isinstace(ip, list):
+            ip = [ip]
+        for ip in ips:
+            if not isinstance(ip, (IPv4Network, IPv6Network)):
+                ip = ip_network(ip)
+            self._outbound_subnets.add(ip)
 
     @property
-    def routable_ips(self):
+    def outbound_subnets(self):
         """
-        Returns the list of routable IPs for this connection
+        Returns the subnets that should route to the server
         """
 
-        routable_ips = self._routable_ips.copy()
-        if str(self.subnet) not in routable_ips:
-            routable_ips.add(str(self.subnet))
+        subnets = self._outbound_subnets.copy()
+        if self.subnet not in subnets:
+            subnets.add(self.subnet)
 
-        return routable_ips
+        if self.server:
+            if (self.subnet != self.server.subnet and self.server.subnet not in subnets):
+                subnets.add(self.server.subnet)
 
-    @routable_ips.setter
-    def routable_ips(self, value):
-        self._routable_ips = set()
+        return subnets
+
+    @outbound_subnets.setter
+    def outbound_subnets(self, value):
+        """
+        Set the subnets that should route to the server
+        """
+
+        self._outbound_subnets = set()
         if value is not None:
             if not isinstance(value, list):
                 value = [value]
 
             for ip in value:
-                self.add_routable_ip(ip)
+                self.add_outbound_subnet(ip)
 
     @property
     def preshared_key(self):
@@ -143,7 +162,7 @@ class WireGuardPeer(WireGuardBase):
             Return the wireguard config file for this peer
         """
 
-        allowed_ips = ', '.join(self.routable_ips)
+        allowed_ips = ', '.join(self.outbound_subnets)
 
         config = f'''
 
@@ -174,12 +193,13 @@ PresharedKey = {self.preshared_key}
         Return the server peer config for this client
         """
 
+        allowed_ips = ', '.join(self.inbound_subnets)
         return f'''
 
 [Peer]
 # {self.name}
 PublicKey = {self.public_key}
-AllowedIPs = {self.address}/{self.address.max_prefixlen}
+AllowedIPs = {allowed_ips)
 '''
 
         if self.preshared_key:
@@ -195,7 +215,7 @@ PresharedKey = {self.preshared_key}
         Returns the full filename of the config file
         """
         return os.path.join(self.config_path, f'{self.interface}.conf')
-        
+
     def write_config(self):
         """
         Writes the config file
