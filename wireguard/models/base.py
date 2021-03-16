@@ -82,8 +82,8 @@ class WireGuardBase:
 
         subnets = self._inbound_subnets.copy()
         local_subnet = ip_network(self.address)
-        if local_network not in subnets:
-            subnets.add(local_network)
+        if local_subnet not in subnets:
+            subnets.add(local_subnet)
 
         return subnets
 

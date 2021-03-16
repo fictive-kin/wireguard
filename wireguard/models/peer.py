@@ -80,8 +80,8 @@ class WireGuardPeer(WireGuardBase):
         adjacent subnets into a single subnet value, even when possible.
         """
 
-        if not isinstace(ip, list):
-            ip = [ip]
+        if not isinstance(ips, list):
+            ips = [ips]
         for ip in ips:
             if not isinstance(ip, (IPv4Network, IPv6Network)):
                 ip = ip_network(ip)
@@ -162,7 +162,7 @@ class WireGuardPeer(WireGuardBase):
             Return the wireguard config file for this peer
         """
 
-        allowed_ips = ', '.join(self.outbound_subnets)
+        allowed_ips = ', '.join([str(subnet) for subnet in self.outbound_subnets])
 
         config = f'''
 
@@ -193,13 +193,13 @@ PresharedKey = {self.preshared_key}
         Return the server peer config for this client
         """
 
-        allowed_ips = ', '.join(self.inbound_subnets)
+        allowed_ips = ', '.join([str(subnet) for subnet in self.inbound_subnets])
         return f'''
 
 [Peer]
 # {self.name}
 PublicKey = {self.public_key}
-AllowedIPs = {allowed_ips)
+AllowedIPs = {allowed_ips}
 '''
 
         if self.preshared_key:
