@@ -93,6 +93,12 @@ class WireGuardServer(WireGuardBase):
         return [peer.private_key for peer in self.peers]
 
     @property
+    def peers_pubkeys(self):
+        if not self.peers:
+            return []
+        return [peer.public_key for peer in self.peers]
+
+    @property
     def _default_peers_config_file(self):
         return os.path.join(
                 self.config_path,
