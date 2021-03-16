@@ -9,7 +9,7 @@ def readme():
 
 name = 'wireguard'
 description = 'Wireguard Utilities'
-version = '0.1.5'
+version = '0.1.6'
 author = 'Fictive Kin LLC'
 email = 'hello@fictivekin.com'
 classifiers = [
