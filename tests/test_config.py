@@ -1,5 +1,10 @@
 
 import pytest
+from unittest.mock import (
+    call,
+    mock_open,
+    patch,
+)
 
 from subnet import ip_network, IPv4Network, IPv4Address
 
@@ -84,3 +89,40 @@ def test_admissible_non_peer():
 
     assert '[Peer]' in config.remote_config
     assert 'PublicKey = something' in config.remote_config
+
+
+def test_write_server_config():
+
+    subnet = '192.168.0.0/24'
+    address = '192.168.0.1'
+
+    server = Server(
+        'test-server',
+        subnet,
+        address=address,
+    )
+
+    with patch('builtins.open', mock_open()) as mo:
+        server.config().write()
+
+        mo.assert_has_calls([
+            call('/etc/wireguard/wg0.conf', 'w'),
+            call('/etc/wireguard/wg0-peers.conf', 'w'),
+        ], any_order=True)
+
+
+def test_write_peer_config():
+
+    address = '192.168.0.1'
+
+    peer = Peer(
+        'test-peer',
+        address=address,
+    )
+
+    with patch('builtins.open', mock_open()) as mo:
+        peer.config().write()
+
+        mo.assert_has_calls([
+            call('/etc/wireguard/wg0.conf', 'w'),
+        ], any_order=True)
