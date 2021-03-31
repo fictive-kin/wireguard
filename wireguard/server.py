@@ -14,7 +14,7 @@ from .constants import (
 )
 from .config import ServerConfig
 from .peer import Peer
-from .utils import generate_key
+from .utils import generate_key, public_key
 
 
 class Server(Peer):
@@ -55,15 +55,15 @@ class Server(Peer):
         return (f'<{self.__class__.__name__} iface={self.interface} subnet={self.subnet} '
                 f'address={self.address}>')
 
-    def privkey_exists(self, item):
+    def pubkey_exists(self, item):
         """
-        Checks a private key against the private keys already used by this server and it's peers
+        Checks a public key against the public keys already used by this server and it's peers
         """
 
-        if item == self.private_key:
+        if item == self.public_key:
             return True
 
-        return item in self.peers_privkeys
+        return item in self.peers_pubkeys
 
     def address_exists(self, item):
         """
@@ -87,16 +87,6 @@ class Server(Peer):
         if not self.peers:
             return []
         return [peer.address for peer in self.peers]
-
-    @property
-    def peers_privkeys(self):
-        """
-        Returns all the private keys for the peers attached to this server
-        """
-
-        if not self.peers:
-            return []
-        return [peer.private_key for peer in self.peers]
 
     @property
     def peers_pubkeys(self):
@@ -139,7 +129,7 @@ class Server(Peer):
         private_key = generate_key()
         tries = 0
 
-        while self.privkey_exists(private_key):
+        while self.pubkey_exists(public_key(private_key)):
             if tries >= max_privkey_retries:
                 raise ValueError('Too many retries to obtain an unique private key')
 
@@ -159,7 +149,7 @@ class Server(Peer):
         """
 
         if not callable(peer_cls):
-            raise ValueError('Ivalid value given for peer_cls')
+            raise ValueError('Invalid value given for peer_cls')
 
         if 'address' not in kwargs:
             kwargs.update({'address': self.unique_address()})
@@ -173,7 +163,11 @@ class Server(Peer):
             **kwargs
         )
 
-        self.add_peer(peer, max_address_retries=(kwargs.get('address') is not None))
+        self.add_peer(
+            peer,
+            max_address_retries=(kwargs.get('address') is None),
+            max_privkey_retries=(kwargs.get('private_key') is None),
+        )
         return peer
 
     def add_peer(self, peer, max_address_retries=None, max_privkey_retries=None):
@@ -191,7 +185,7 @@ class Server(Peer):
             except ValueError as exc:
                 raise ValueError('Could not add peer to this server. It is not unique.') from exc
 
-        if self.privkey_exists(peer.private_key):
+        if self.pubkey_exists(peer.public_key):
             try:
                 if max_privkey_retries is False or max_privkey_retries == 0:
                     raise ValueError('Not allowed to change the peer private key due to'
