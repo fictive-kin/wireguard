@@ -13,33 +13,33 @@ Quick Start
 
 Setup a WireGuard server::
 
-    from wireguard import WireGuardServer
+    from wireguard import Server
 
-    server = WireGuardServer('myvpnserver.com', '192.168.24.0/24', address='192.168.24.1')
+    server = Server('myvpnserver.com', '192.168.24.0/24', address='192.168.24.1')
 
     # Write out the server config to the default location: /etc/wireguard/wg0.conf
-    server.write_config()
+    server.config().write()
 
 
-Create a client within the previous server::
+Create a client within the previously created server::
 
     peer = server.peer('my-client')
 
-    # Copy this outputted config to the client device
-    print(peer.config())
+    # Output this peer's config for copying to the peer device
+    print(peer.config().local_config)
 
     # Rewrite the server config file including the newly created peer
-    server.write_config()
+    server.config().write()
 
 
 Create a standalone client::
 
-    from wireguard import WireGuardPeer
+    from wireguard import Peer
 
-    peer = WireGuardPeer('my-client', '192.168.24.0/24', address='192.168.24.45')
+    peer = Peer('my-client', '192.168.24.0/24', address='192.168.24.45')
 
     # Write out the peer config to the default location: /etc/wireguard/wg0.conf
-    peer.write_config()
+    peer.config().write()
 
 
 **Note**: Both the server and peer config are named the same by default. This is because they would
