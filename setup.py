@@ -9,7 +9,7 @@ def readme():
 
 name = 'wireguard'
 description = 'Wireguard Utilities'
-version = '0.1.6'
+version = '0.2.0'
 author = 'Fictive Kin LLC'
 email = 'hello@fictivekin.com'
 classifiers = [
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         packages=[
             'wireguard',
             'wireguard.cli',
-            'wireguard.models',
+            'wireguard.utils',
         ],
         install_requires=[
             'click',
