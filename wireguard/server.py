@@ -1,6 +1,4 @@
 
-import os
-
 from subnet import (
     IPv4Address,
     IPv6Address,
@@ -16,9 +14,15 @@ from .constants import (
 )
 from .config import ServerConfig
 from .peer import Peer
+from .utils import generate_key
 
 
 class Server(Peer):
+    """
+    The WireGuard Server
+
+    While not required to have a server<->client setup, this class simplifies doing so
+    """
 
     subnet = None
 
@@ -48,7 +52,8 @@ class Server(Peer):
         A simplistic representation of this object
         """
 
-        return f'<{self.__class__.__name__} iface={self.interface} subnet={self.subnet} address={self.address}>'
+        return (f'<{self.__class__.__name__} iface={self.interface} subnet={self.subnet} '
+                f'address={self.address}>')
 
     def privkey_exists(self, item):
         """
@@ -75,18 +80,30 @@ class Server(Peer):
 
     @property
     def peers_addresses(self):
+        """
+        Returns all the IP addresses for the peers attached to this server
+        """
+
         if not self.peers:
             return []
         return [peer.address for peer in self.peers]
 
     @property
     def peers_privkeys(self):
+        """
+        Returns all the private keys for the peers attached to this server
+        """
+
         if not self.peers:
             return []
         return [peer.private_key for peer in self.peers]
 
     @property
     def peers_pubkeys(self):
+        """
+        Returns all the public keys for the peers attached to this server
+        """
+
         if not self.peers:
             return []
         return [peer.public_key for peer in self.peers]
@@ -96,7 +113,7 @@ class Server(Peer):
         Return an unused address from this server's subnet
         """
 
-        if max_address_retries is None or max_address_retries == True:
+        if max_address_retries is None or max_address_retries is True:
             max_address_retries = MAX_ADDRESS_RETRIES
 
         address = self.subnet.random_ip()
@@ -116,7 +133,7 @@ class Server(Peer):
         Returns a private key that is not already in use among this server's peers
         """
 
-        if max_privkey_retries is None or max_privkey_retries == True:
+        if max_privkey_retries is None or max_privkey_retries is True:
             max_privkey_retries = MAX_PRIVKEY_RETRIES
 
         private_key = generate_key()
@@ -137,6 +154,9 @@ class Server(Peer):
              peer_cls=Peer,
              **kwargs
         ):
+        """
+        Returns a peer that is prepopulated with values appropriate for this server
+        """
 
         if not callable(peer_cls):
             raise ValueError('Ivalid value given for peer_cls')
@@ -164,26 +184,32 @@ class Server(Peer):
 
         if self.address_exists(peer.address):
             try:
-                if max_address_retries == False or max_address_retries == 0:
+                if max_address_retries is False or max_address_retries == 0:
                     raise ValueError('Not allowed to change the peer IP address due to'
                                      ' max_address_retries=False (or 0)')
                 peer.address = self.unique_address(max_address_retries)
             except ValueError as exc:
-                raise ValueError('Could not add peer to this server. It is not unique.', exc)
+                raise ValueError('Could not add peer to this server. It is not unique.') from exc
 
         if self.privkey_exists(peer.private_key):
             try:
-                if max_privkey_retries == False or max_privkey_retries == 0:
+                if max_privkey_retries is False or max_privkey_retries == 0:
                     raise ValueError('Not allowed to change the peer private key due to'
                                      ' max_privkey_retries=False (or 0)')
                 peer.private_key = self.unique_privkey(max_privkey_retries)
             except ValueError as exc:
-                raise ValueError('Could not add peer to this server. It is not unique.', exc)
+                raise ValueError('Could not add peer to this server. It is not unique.') from exc
 
         peer.peers.add(self)  # This server needs to be a peer of the new peer
         self.peers.add(peer)  # The peer needs to be attached to this server
 
     def add_nat_traversal(self, outbound_interface):
+        """
+        Adds appropriate PostUp/PostDown rules when this server is acting as
+        a NAT traversal interface
+        """
+
+        # pylint: disable=line-too-long
         post_up = [
             f'iptables -A FORWARD -i %i -o {outbound_interface} -j ACCEPT',
             f'iptables -A FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT',
@@ -194,5 +220,7 @@ class Server(Peer):
             f'iptables -D FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT',
             f'iptables -t nat -D POSTROUTING -o {outbound_interface} -j MASQUERADE',
         ]
+        # pylint: enable=line-too-long
+
         self.post_up.extend(post_up)
         self.post_down.extend(post_down)

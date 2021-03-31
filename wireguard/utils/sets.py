@@ -10,10 +10,14 @@ from subnet import (
 
 
 class ClassedSet(set):
+    """
+    A set that requires members be of a specific class
+    """
 
-    def _coerce_value(self, value):
-        raise NotImplemented('ClassedSet must be not be used directly. Inherit from it, with '
-                             'appropriate value coersion logic implemented in the child class')
+    def _coerce_value(self, value):  # pylint: disable=no-self-use
+        raise NotImplementedError('ClassedSet must be not be used directly. Inherit from it, '
+                                  'with appropriate value coersion logic implemented in the '
+                                  'child class')
 
     def add(self, value):
         """
@@ -21,9 +25,9 @@ class ClassedSet(set):
         """
 
         if not value:
-            raise ValueError(f'Cannot add an empty value to {self.__class__}')
+            raise ValueError(f'Cannot add an empty value to {self.__class__.__name__}')
 
-        if isinstance(value, list):
+        if isinstance(value, (list, set)):
             raise ValueError('Provided value must not be a list')
 
         super().add(self._coerce_value(value))
@@ -34,17 +38,20 @@ class ClassedSet(set):
         """
 
         if not values:
-            raise ValueError(f'Cannot add an empty value to {self.__class__}')
+            raise ValueError(f'Cannot add an empty value to {self.__class__.__name__}')
 
-        if not isinstance(values, list):
+        if not isinstance(values, (list, set)):
             values = [values]
 
         for value in values:
             self.add(value)
 
 class IPAddressSet(ClassedSet):
+    """
+    A set of IPv4Address/IPv6Address objects
+    """
 
-    def _coerce_value(self, value):
+    def _coerce_value(self, value):  # pylint: disable=no-self-use
         """
         Coerce given values into an IP Address object
         """
@@ -55,8 +62,11 @@ class IPAddressSet(ClassedSet):
 
 
 class IPNetworkSet(ClassedSet):
+    """
+    A set of IPv4Network/IPv6Network objects
+    """
 
-    def _coerce_value(self, value):
+    def _coerce_value(self, value):  # pylint: disable=no-self-use
         """
         Coerce given values into an IP Network object
 

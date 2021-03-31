@@ -7,23 +7,24 @@ from subnet import (
 
 from .utils import (
     generate_key,
-    public_key,
+    public_key as nacl_public_key,
     ClassedSet,
     IPAddressSet,
     IPNetworkSet,
 )
 from .config import Config
 from .constants import (
-    CONFIG_PATH,
     INTERFACE,
     KEEPALIVE_MINIMUM,
-    MAX_ADDRESS_RETRIES,
-    MAX_PRIVKEY_RETRIES,
     PORT,
 )
 
 
 class PeerSet(ClassedSet):
+    """
+    A set of Peer objects
+    """
+
     def _coerce_value(self, value):
         """
         Bomb if a Peer object is not provided
@@ -34,7 +35,12 @@ class PeerSet(ClassedSet):
         return value
 
 
-class Peer:
+class Peer:  # pylint: disable=too-many-instance-attributes
+    """
+    The Peer Class
+
+    This is the main type of WireGuard object, representing both a server and a client
+    """
 
     description = None
     _address = None
@@ -42,19 +48,20 @@ class Peer:
     _private_key = None
     _public_key = None
     _keepalive = None
-    allowed_ips = IPNetworkSet()
+    allowed_ips = None
     interface = None
     endpoint = None
     save_config = None
-    dns = IPAddressSet()
-    pre_up = []
-    post_up = []
-    pre_down = []
-    post_down = []
+    dns = None
+    pre_up = None
+    post_up = None
+    pre_down = None
+    post_down = None
 
     _config = None
-    peers = PeerSet()
+    peers = None
 
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def __init__(self,
                  description,
                  *,
@@ -76,6 +83,14 @@ class Peer:
                  peers=None,
                  config_cls=None,
         ):
+
+        self.allowed_ips = IPNetworkSet()
+        self.dns = IPAddressSet()
+        self.peers = PeerSet()
+        self.pre_up = []
+        self.post_up = []
+        self.pre_down = []
+        self.post_down = []
 
         self.description = description
 
@@ -100,6 +115,7 @@ class Peer:
 
         self.port = port
         self.interface = interface
+        self.keepalive = keepalive
 
         if save_config is not None:
             self.save_config = save_config
@@ -107,12 +123,12 @@ class Peer:
         # Always add own address to allowed IPs, to ensure routing at least makes it that far
         self.allowed_ips.add(ip_network(self.address))
         if allowed_ips:
-            if isinstance(allowed_ips, list):
+            if isinstance(allowed_ips, (list, set)):
                 self.allowed_ips.extend(allowed_ips)
             else:
                 self.allowed_ips.add(allowed_ips)
         if dns:
-            if isinstance(dns, list):
+            if isinstance(dns, (list, set)):
                 self.dns.extend(dns)
             else:
                 self.dns.add(dns)
@@ -125,7 +141,7 @@ class Peer:
         if post_down:
             self.post_down.append(post_down)
         if peers:
-            if isinstance(peers, list):
+            if isinstance(peers, (list, set)):
                 self.peers.extend(peers)
             else:
                 self.peers.add(peers)
@@ -141,10 +157,18 @@ class Peer:
 
     @property
     def port(self):
+        """
+        Returns the port value
+        """
+
         return self._port
 
     @port.setter
     def port(self, value):
+        """
+        Sets the port value
+        """
+
         if value in [None, False]:
             value = PORT
         else:
@@ -206,7 +230,7 @@ class Peer:
             return self._public_key
 
         if self._private_key is not None:
-            return public_key(self._private_key)
+            return nacl_public_key(self._private_key)
 
         raise AttributeError('Neither public key not private key are set!')
 
@@ -216,7 +240,7 @@ class Peer:
         Sets the public key for when the private key is unavailable
         """
 
-        if self._private_key is not None and public_key(self._private_key) != value:
+        if self._private_key is not None and nacl_public_key(self._private_key) != value:
             raise ValueError('Cannot set public key to a value inconsistent with the private key!')
 
         self._public_key = value

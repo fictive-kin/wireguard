@@ -1,4 +1,5 @@
 
+import os
 
 from .utils import (
     value_list_to_comma,
@@ -6,7 +7,6 @@ from .utils import (
 )
 from .constants import (
     CONFIG_PATH,
-    INTERFACE,
 )
 
 
@@ -32,13 +32,17 @@ PEER_KEYS = [
 ]
 
 
-class Config:
+class Config:  # pylint: disable=too-many-public-methods
+    """
+    The config for a WireGuard Peer
+    """
+
     _peer = None
 
     def __init__(self, peer):
         # These 2 attributes are the bare minimum allowed to create a remote peer
-        if not (getattr(peer, 'allowed_ips') and
-                getattr(peer, 'public_key')):
+        if not (hasattr(peer, 'allowed_ips') and
+                hasattr(peer, 'public_key')):
             raise ValueError('You must provide a valid Peer, or subclass thereof')
 
         self._peer = peer
@@ -163,10 +167,10 @@ class Config:
 
         data = ['[Interface]']
         for item in INTERFACE_KEYS:
-            value = getattr(self, item)
+            value = getattr(self, item, None)
             if value:
                 data.append(value)
-        
+
         return '''
 '''.join(data)
 
@@ -189,7 +193,7 @@ class Config:
 
         data = ['[Peer]']
         for item in PEER_KEYS:
-            value = getattr(self, item)
+            value = getattr(self, item, None)
             if value:
                 data.append(value)
 
@@ -230,6 +234,9 @@ class Config:
 
 
 class ServerConfig(Config):
+    """
+    A config specific to a WireGuard Server
+    """
 
     @property
     def address(self):
