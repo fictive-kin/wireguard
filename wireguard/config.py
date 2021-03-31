@@ -1,6 +1,12 @@
 
 import os
 
+try:
+    import qrcode
+    HAS_QRCODE = True
+except ImportError:
+    HAS_QRCODE = False
+
 from .utils import (
     value_list_to_comma,
     value_list_to_multiple,
@@ -210,6 +216,18 @@ class Config:  # pylint: disable=too-many-public-methods
 
 {self.peers}
 '''
+
+    @property
+    def qrcode(self):
+        """
+        Returns a QR Code of this peer's configuration
+        """
+
+        if not HAS_QRCODE:
+            raise AttributeError('QR Code functionality is not enabled. Please add the qrcode '
+                                 'library to this environment')
+
+        return qrcode.make(self.local_config)
 
     @property
     def filename(self):

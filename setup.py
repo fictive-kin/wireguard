@@ -49,4 +49,7 @@ if __name__ == "__main__":
         scripts=[
             'bin/wireguard',
         ],
+        extras_require={
+            'qr': ['qrcode[pil]'],
+        },
     )
