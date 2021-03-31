@@ -126,3 +126,24 @@ def test_write_peer_config():
         mo.assert_has_calls([
             call('/etc/wireguard/wg0.conf', 'w'),
         ], any_order=True)
+
+
+def test_peer_qrcode():
+
+    address = '192.168.0.1'
+
+    peer = Peer(
+        'test-peer',
+        address=address,
+    )
+
+    try:
+        # If qrcode is present in the venv, test it works.
+        import qrcode
+        assert peer.config().qrcode
+
+    except ImportError:
+        # If qrcode is not present in the venv, test it fails appropriately.
+        with pytest.raises(AttributeError) as exc:
+            peer.config().qrcode
+            assert 'add the qrcode' in str(exc.value)
