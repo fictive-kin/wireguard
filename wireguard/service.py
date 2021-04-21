@@ -12,7 +12,7 @@ def _run(cmd):
     return subprocess.run(cmd, text=True, check=True, capture_output=True)
 
 
-class ServicePeer:
+class InterfacePeer:
     interface = None
     peer = None
 
@@ -38,7 +38,7 @@ class ServicePeer:
             self.load(data)
 
     def __repr__(self):
-        return f'<ServicePeer iface={self.interface} peer={self.peer} tx={self.tx} rx={self.rx}>'
+        return f'<InterfacePeer iface={self.interface} peer={self.peer} tx={self.tx} rx={self.rx}>'
 
     @property
     def is_connected(self):
@@ -78,7 +78,7 @@ class ServicePeer:
             setattr(self, key, value)
 
 
-class ServiceInterface:
+class Interface:
 
     interface = None
 
@@ -89,7 +89,7 @@ class ServiceInterface:
         self.interface = interface
 
     def __repr__(self):
-        return f'<ServiceInterface iface={self.interface}>'
+        return f'<Interface iface={self.interface}>'
 
     def show(self, extra=None):
         cmd = [
@@ -141,7 +141,7 @@ class ServiceInterface:
         ])
 
     def peer(self, peer):
-        return ServicePeer(self.interface, peer)
+        return InterfacePeer(self.interface, peer)
 
     def public_key(self):
         return self.show('public-key').stdout.replace('\n', '')

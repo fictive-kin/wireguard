@@ -8,7 +8,7 @@ Interaction with the system's wireguard service
 
 import click
 
-from wireguard.service import ServiceInterface, ServicePeer
+from wireguard.service import Interface, InterfacePeer
 
 
 @click.group()
@@ -27,9 +27,9 @@ def stats(interface, peer=None, verify_connected=False):
     Display the stats for the given interface
     """
 
-    iface = ServiceInterface(interface)
+    iface = Interface(interface)
     if peer:
-        iface_peer = iface.stats().get(peer, ServicePeer(interface, peer))
+        iface_peer = iface.stats().get(peer, InterfacePeer(interface, peer))
         click.echo(iface_peer)
         if verify_connected:
             click.echo(iface_peer.is_connected)

@@ -14,6 +14,7 @@ from .constants import (
 )
 from .config import ServerConfig
 from .peer import Peer
+from .service import Interface
 from .utils import generate_key, public_key
 
 
@@ -54,6 +55,13 @@ class Server(Peer):
 
         return (f'<{self.__class__.__name__} iface={self.interface} subnet={self.subnet} '
                 f'address={self.address}>')
+
+    @property
+    def service(self):
+        """
+        Returns the service interface for this server
+        """
+        return Interface(self.interface)
 
     def pubkey_exists(self, item):
         """
