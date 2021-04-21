@@ -61,10 +61,13 @@ class IPAddressSet(ClassedSet):
         return value
 
 
+
 class IPNetworkSet(ClassedSet):
     """
     A set of IPv4Network/IPv6Network objects
     """
+
+    _ip_network_strict = True
 
     def _coerce_value(self, value):  # pylint: disable=no-self-use
         """
@@ -75,5 +78,15 @@ class IPNetworkSet(ClassedSet):
         """
 
         if not isinstance(value, (IPv4Network, IPv6Network)):
-            value = ip_network(value)
+            value = ip_network(value, strict=self._ip_network_strict)
         return value
+
+
+class NonStrictIPNetworkSet(IPNetworkSet):
+    """
+    A set of Non-Strict IPv4Network/IPv6Network objects
+
+    Allows host bits to be set when corecing the value to an IPNetwork
+    """
+
+    _ip_network_strict = False
