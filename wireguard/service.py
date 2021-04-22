@@ -1,3 +1,12 @@
+"""
+wireguard.service
+
+Service interaction handling.
+
+NOTE: This functionality requires sufficient privileges to run the wg command
+      on your system. Often, this means root. Do NOT grant this capability to
+      the web server user. If you do, it is at your own risk.
+"""
 
 import platform
 import subprocess
@@ -9,10 +18,17 @@ from .utils.sets import NonStrictIPNetworkSet
 
 
 def _run(cmd):
+    """
+    Run a system command with the appropriate settings for how the code wants the output
+    """
     return subprocess.run(cmd, text=True, check=True, capture_output=True)
 
 
 class InterfacePeer:
+    """
+    A peer that is currently configured on the WireGuard interface
+    """
+
     interface = None
     peer = None
 
@@ -42,6 +58,11 @@ class InterfacePeer:
 
     @property
     def is_connected(self):
+        """
+        If enough data is present, ping the host over the WireGuard connection to determine
+        that it is connected. Otherwise, returns False.
+        """
+
         if self.ip_address:
             try:
                 return ping(str(self.ip_address))
@@ -50,6 +71,10 @@ class InterfacePeer:
         return False
 
     def load(self, data):
+        """
+        Load this object with the provided data
+        """
+
         if not isinstance(data, dict):
             raise ValueError('Invalid value for data. It must be a dict')
 
@@ -64,7 +89,8 @@ class InterfacePeer:
             elif key == 'allowed_ips':
                 if value is None:
                     continue
-                elif not isinstance(value, (list, set)):
+
+                if not isinstance(value, (list, set)):
                     subnets = value.split(',')
                 else:
                     subnets = value
@@ -79,6 +105,9 @@ class InterfacePeer:
 
 
 class Interface:
+    """
+    A currently configured WireGuard interface on this host
+    """
 
     interface = None
 
@@ -92,6 +121,10 @@ class Interface:
         return f'<Interface iface={self.interface}>'
 
     def show(self, extra=None):
+        """
+        Returns the state of the WireGuard interface
+        """
+
         cmd = [
             'wg',
             'show',
@@ -107,6 +140,10 @@ class Interface:
         return _run(cmd)
 
     def stop(self):
+        """
+        Stops the WireGuard interface
+        """
+
         return _run([
             'wg-quick',
             'down',
@@ -114,10 +151,18 @@ class Interface:
         ])
 
     def restart(self):
+        """
+        Restarts the WireGuard interface
+        """
+
         self.stop()
         return self.start()
 
     def start(self):
+        """
+        Starts the WireGuard interface
+        """
+
         return _run([
             'wg-quick',
             'up',
@@ -125,6 +170,10 @@ class Interface:
         ])
 
     def sync(self, config_file):
+        """
+        Sync the configuration of the WireGuard interface with the given config file
+        """
+
         return _run([
             'wg',
             'syncconf',
@@ -133,6 +182,10 @@ class Interface:
         ])
 
     def add(self, config_file):
+        """
+        Add the given config file's directives to the WireGuard interface
+        """
+
         return _run([
             'wg',
             'addconf',
@@ -141,15 +194,28 @@ class Interface:
         ])
 
     def peer(self, peer):
+        """
+        Returns a peer, prepopulated for this interface
+        """
         return InterfacePeer(self.interface, peer)
 
     def public_key(self):
+        """
+        Return the interface's public key
+        """
         return self.show('public-key').stdout.replace('\n', '')
 
     def dump(self):
+        """
+        Returns the machine-parsable state of the WireGuard interface
+        """
         return self.show('dump')
 
     def stats(self):
+        """
+        Returns statistics about the configured peers for the interface
+        """
+
         public_key = self.public_key()
         output = self.dump()
         peers = {}
@@ -177,6 +243,10 @@ class Interface:
         return peers
 
     def peers(self):
+        """
+        Returns the peers' public keys for this interface
+        """
+
         output = self.show('peers')
         peers = []
         for line in output.stdout.split('\n'):

@@ -30,12 +30,26 @@ def stats(interface, peer=None, verify_connected=False):
     iface = Interface(interface)
     if peer:
         iface_peer = iface.stats().get(peer, InterfacePeer(interface, peer))
-        click.echo(iface_peer)
         if verify_connected:
-            click.echo(iface_peer.is_connected)
+            click.echo(
+                '<InterfacePeer interface={} peer={} tx={} rx={} connected={}>'.format(
+                    iface_peer.interface,
+                    iface_peer.peer,
+                    iface_peer.tx,
+                    iface_peer.rx,
+                    iface_peer.is_connected))
+        else:
+            click.echo(iface_peer)
 
     else:
         for key, obj in iface.stats().items():  # pylint: disable=unused-variable
-            click.echo(obj)
             if verify_connected:
-                click.echo(obj.is_connected)
+                click.echo(
+                    '<InterfacePeer interface={} peer={} tx={} rx={} connected={}>'.format(
+                        obj.interface,
+                        obj.peer,
+                        obj.tx,
+                        obj.rx,
+                        obj.is_connected))
+            else:
+                click.echo(obj)
