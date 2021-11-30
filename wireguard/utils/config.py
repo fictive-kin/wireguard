@@ -1,3 +1,4 @@
+import os
 
 def value_list_to_comma(ini_key, values):
     """
@@ -23,5 +24,4 @@ def value_list_to_multiple(ini_key, values):
     for value in values:
         data.append(f'{ini_key} = {value}')
 
-    return '''
-'''.join(data)
+    return os.linesep.join(data)
