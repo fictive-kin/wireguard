@@ -284,8 +284,8 @@ class ServerConfig(Config):
         peers_file = self.peers_full_path(config_path)
 
         with open(self.full_path(config_path), 'w') as conf_fh:
-            conf_fh.write(self.interface)
-            conf_fh.write(f'PostUp = wg addconf %i {peers_file}')
+            conf_fh.write(self.interface + os.linesep)
+            conf_fh.write(f'PostUp = wg addconf %i {peers_file}' + os.linesep)
 
         with open(peers_file, 'w') as peers_fh:
-            peers_fh.write(self.peers)
+            peers_fh.write(self.peers + os.linesep)
