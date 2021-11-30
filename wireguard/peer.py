@@ -43,13 +43,13 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     """
 
     description = None
+    _interface = None
     _address = None
     _port = None
     _private_key = None
     _public_key = None
     _keepalive = None
     allowed_ips = None
-    interface = None
     endpoint = None
     save_config = None
     dns = None
@@ -79,7 +79,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                  post_up=None,
                  pre_down=None,
                  post_down=None,
-                 interface=INTERFACE,
+                 interface=None,
                  peers=None,
                  config_cls=None,
         ):
@@ -146,8 +146,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             else:
                 self.peers.add(peers)
 
-        if config_cls is not None:
-            self.config(config_cls)
+        self.config(config_cls)
 
     def __repr__(self):
         """
@@ -174,6 +173,24 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         else:
             value = int(value)
         self._port = value
+
+    @property
+    def interface(self):
+        """
+        Returns the interface value
+        """
+
+        return self._interface
+
+    @interface.setter
+    def interface(self, value):
+        """
+        Sets the interface value
+        """
+
+        if value in [None, False]:
+            value = INTERFACE
+        self._interface = value
 
     @property
     def address(self):
@@ -262,15 +279,17 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             if not isinstance(value, int):
                 raise ValueError('Keepalive value must be an integer')
 
-            if value < KEEPALIVE_MINIMUM:
-                value = KEEPALIVE_MINIMUM
+            value = max(value, KEEPALIVE_MINIMUM)
 
         self._keepalive = value
 
-    def config(self, config_cls=Config):
+    def config(self, config_cls=None):
         """
         Return the wireguard config file for this peer
         """
+
+        if config_cls in [None, False]:
+            config_cls = Config
 
         if self._config is not None and isinstance(self._config, config_cls):
             return self._config

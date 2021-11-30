@@ -234,16 +234,22 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         return f'{self._peer.interface}.conf'
 
-    def full_path(self, config_path=CONFIG_PATH):
+    def full_path(self, config_path=None):
         """
         Returns the full path to the WireGuard config file
         """
+
+        if config_path in [None, False]:
+            config_path = CONFIG_PATH
         return os.path.join(config_path, self.filename)
 
-    def write(self, config_path=CONFIG_PATH):
+    def write(self, config_path=None):
         """
         Writes the WireGuard config file
         """
+
+        if config_path in [None, False]:
+            config_path = CONFIG_PATH
 
         with open(self.full_path(config_path), mode='w', encoding='utf-8') as conf_fh:
             conf_fh.write(self.local_config)
@@ -268,17 +274,21 @@ class ServerConfig(Config):
         """
         return f'{self._peer.interface}-peers.conf'
 
-    def peers_full_path(self, config_path=CONFIG_PATH):
+    def peers_full_path(self, config_path=None):
         """
         Returns the full path to the peers config file
         """
+        if config_path in [None, False]:
+            config_path = CONFIG_PATH
         return os.path.join(config_path, self.peers_filename)
 
-    def write(self, config_path=CONFIG_PATH):
+    def write(self, config_path=None):
         """
         Write out the main config and the peers config files
         """
 
+        if config_path in [None, False]:
+            config_path = CONFIG_PATH
         peers_file = self.peers_full_path(config_path)
 
         with open(self.full_path(config_path), mode='w', encoding='utf-8') as conf_fh:

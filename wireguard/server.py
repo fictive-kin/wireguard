@@ -111,7 +111,7 @@ class Server(Peer):
         Return an unused address from this server's subnet
         """
 
-        if max_address_retries is None or max_address_retries is True:
+        if max_address_retries in [None, True]:
             max_address_retries = MAX_ADDRESS_RETRIES
 
         address = self.subnet.random_ip()
@@ -131,7 +131,7 @@ class Server(Peer):
         Returns a private key that is not already in use among this server's peers
         """
 
-        if max_privkey_retries is None or max_privkey_retries is True:
+        if max_privkey_retries in [None, True]:
             max_privkey_retries = MAX_PRIVKEY_RETRIES
 
         private_key = generate_key()
@@ -149,14 +149,16 @@ class Server(Peer):
     def peer(self,
              description,
              *,
-             peer_cls=Peer,
+             peer_cls=None,
              **kwargs
         ):
         """
         Returns a peer that is prepopulated with values appropriate for this server
         """
 
-        if not callable(peer_cls):
+        if peer_cls in [None, False]:
+            peer_cls = Peer
+        elif not callable(peer_cls):
             raise ValueError('Invalid value given for peer_cls')
 
         if 'address' not in kwargs:
@@ -186,7 +188,7 @@ class Server(Peer):
 
         if self.address_exists(peer.address):
             try:
-                if max_address_retries is False or max_address_retries == 0:
+                if max_address_retries in [False, 0]:
                     raise ValueError('Not allowed to change the peer IP address due to'
                                      ' max_address_retries=False (or 0)')
                 peer.address = self.unique_address(max_address_retries)
@@ -195,7 +197,7 @@ class Server(Peer):
 
         if self.pubkey_exists(peer.public_key):
             try:
-                if max_privkey_retries is False or max_privkey_retries == 0:
+                if max_privkey_retries in [False, 0]:
                     raise ValueError('Not allowed to change the peer private key due to'
                                      ' max_privkey_retries=False (or 0)')
                 peer.private_key = self.unique_privkey(max_privkey_retries)
