@@ -177,8 +177,7 @@ class Config:  # pylint: disable=too-many-public-methods
             if value:
                 data.append(value)
 
-        return '''
-'''.join(data)
+        return os.linesep.join(data)
 
     @property
     def peers(self):
@@ -203,19 +202,18 @@ class Config:  # pylint: disable=too-many-public-methods
             if value:
                 data.append(value)
 
-        return '''
-'''.join(data)
+        return os.linesep.join(data)
 
     @property
     def local_config(self):
         """
         Returns the full WireGuard config
         """
-        return f'''
-{self.interface}
-
-{self.peers}
-'''
+        return os.linesep.join((
+            self.interface,
+            '',
+            self.peers,
+        ))
 
     @property
     def qrcode(self):
@@ -247,7 +245,7 @@ class Config:  # pylint: disable=too-many-public-methods
         Writes the WireGuard config file
         """
 
-        with open(self.full_path(config_path), 'w') as conf_fh:
+        with open(self.full_path(config_path), mode='w', encoding='utf-8') as conf_fh:
             conf_fh.write(self.local_config)
 
 
@@ -283,9 +281,9 @@ class ServerConfig(Config):
 
         peers_file = self.peers_full_path(config_path)
 
-        with open(self.full_path(config_path), 'w') as conf_fh:
+        with open(self.full_path(config_path), mode='w', encoding='utf-8') as conf_fh:
             conf_fh.write(self.interface + os.linesep)
             conf_fh.write(f'PostUp = wg addconf %i {peers_file}' + os.linesep)
 
-        with open(peers_file, 'w') as peers_fh:
+        with open(peers_file, mode='w', encoding='utf-8') as peers_fh:
             peers_fh.write(self.peers + os.linesep)

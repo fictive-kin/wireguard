@@ -106,8 +106,8 @@ def test_write_server_config():
         server.config().write()
 
         mo.assert_has_calls([
-            call('/etc/wireguard/wg0.conf', 'w'),
-            call('/etc/wireguard/wg0-peers.conf', 'w'),
+            call('/etc/wireguard/wg0.conf', mode='w', encoding='utf-8'),
+            call('/etc/wireguard/wg0-peers.conf', mode='w', encoding='utf-8'),
         ], any_order=True)
 
 
@@ -124,7 +124,7 @@ def test_write_peer_config():
         peer.config().write()
 
         mo.assert_has_calls([
-            call('/etc/wireguard/wg0.conf', 'w'),
+            call('/etc/wireguard/wg0.conf', mode='w', encoding='utf-8'),
         ], any_order=True)
 
 
