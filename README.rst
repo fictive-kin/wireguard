@@ -42,7 +42,7 @@ Create a standalone client::
     peer.config().write()
 
 
-**Note**: Both the server and peer config are named the same by default. This is because they would
-typically be on different machines and would not interfere with one another. Be aware of this when
-generating peer configs on a server node, or on any node that has a pre-existing wireguard config
-at the default file location.
+**Note**: Both the server and peer config files are named the same by default. This is because
+they would typically be on different machines and would not interfere with one another. Be aware
+of this when generating peer configs on a server node, or on any node that has a pre-existing
+wireguard config at the default file location.
