@@ -56,17 +56,17 @@ def server(endpoint,
     if nat_traversal_interface:
         obj.add_nat_traversal(nat_traversal_interface)
 
-    click.echo(obj.config)
+    click.echo(obj.config())
 
     if write:
-        if os.path.isfile(obj.config.full_path):
-            if not click.prompt(f'{obj.config.full_path} exists! Overwrite? [y/N]'):
+        if os.path.isfile(obj.config().full_path):
+            if not click.prompt(f'{obj.config().full_path} exists! Overwrite? [y/N]'):
                 click.Abort()
-        if os.path.isfile(obj.config.peers_full_path):
-            if not click.prompt(f'{obj.config.peers_full_path} exists! Overwrite? [y/N]'):
+        if os.path.isfile(obj.config().peers_full_path):
+            if not click.prompt(f'{obj.config().peers_full_path} exists! Overwrite? [y/N]'):
                 click.Abort()
 
-        obj.config.write()
+        obj.config().write()
 
 
 @cli.command()
@@ -122,14 +122,14 @@ def peer(name,
         interface=interface,
     )
 
-    click.echo(obj.config)
+    click.echo(obj.config())
 
     if write:
-        if os.path.isfile(obj.config.full_path):
-            if not click.prompt(f'{obj.config.full_path} exists! Overwrite? [y/N]'):
+        if os.path.isfile(obj.config().full_path):
+            if not click.prompt(f'{obj.config().full_path} exists! Overwrite? [y/N]'):
                 click.Abort()
 
-        obj.config.write()
+        obj.config().write()
 
 
 if __name__ == "__main__":
