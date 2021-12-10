@@ -57,6 +57,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     post_up = None
     pre_down = None
     post_down = None
+    mtu = None
+    table = None
 
     _config = None
     peers = None
@@ -82,6 +84,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                  interface=None,
                  peers=None,
                  config_cls=None,
+                 mtu=None,
+                 table=None,
         ):
 
         self.allowed_ips = IPNetworkSet()
@@ -132,6 +136,16 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                 self.dns.extend(dns)
             else:
                 self.dns.add(dns)
+        if mtu:
+            if mtu >= 68 and mtu <= 1500:
+                self.mtu = mtu
+            else:
+                raise ValueError('MTU out of range (68-1500)')
+        if table:
+            if table < 1 or table >252:
+                self.table = table
+            else:
+                raise ValueError('Table out of range (1-252)')
         if pre_up:
             self.pre_up.append(pre_up)
         if post_up:

@@ -26,6 +26,8 @@ INTERFACE_KEYS = [
     'pre_down',
     'post_down',
     'save_config',
+    'mtu',
+    'table',
 ]
 
 PEER_KEYS = [

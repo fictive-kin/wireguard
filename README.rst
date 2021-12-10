@@ -49,4 +49,4 @@ wireguard config at the default file location.
 
 Version
 -------
-This is version 0.2.3
+This is version 0.2.4
