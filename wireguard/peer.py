@@ -304,7 +304,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         if value is not None:
             if not isinstance(value, int):
                 raise ValueError('MTU value must be an integer')
-            elif value < 68 or value > 1500: # pylint: disable=no-else-raise
+            # elif value < 68 or value > 1500: # pylint: Unnecessary "elif" after "raise"
+            if value < 68 or value > 1500:  # pylint: disable=no-else-raise
                 raise ValueError('MTU value must be in the range 68-1500')
 
         self._mtu = value
@@ -324,7 +325,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         if value is not None:
             if not isinstance(value, int):
                 raise ValueError('Table value must be an integer')
-            elif value < 1 or value > 252:
+            # elif value < 1 or value > 252: # pylint Unnecessary "elif" after "raise"
+            if value < 1 or value > 252:
                 raise ValueError('Table value must be in the range 1-252')
 
         self._table = value
