@@ -57,8 +57,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     post_up = None
     pre_down = None
     post_down = None
-    mtu = None
-    table = None
+    _mtu = None
+    _table = None
 
     _config = None
     peers = None
@@ -120,6 +120,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         self.port = port
         self.interface = interface
         self.keepalive = keepalive
+        self.mtu = mtu
+        self.table = table
 
         if save_config is not None:
             self.save_config = save_config
@@ -136,16 +138,6 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                 self.dns.extend(dns)
             else:
                 self.dns.add(dns)
-        if mtu:
-            if mtu >= 68 and mtu <= 1500:
-                self.mtu = mtu
-            else:
-                raise ValueError('MTU out of range (68-1500)')
-        if table:
-            if table < 1 or table >252:
-                self.table = table
-            else:
-                raise ValueError('Table out of range (1-252)')
         if pre_up:
             self.pre_up.append(pre_up)
         if post_up:
@@ -296,6 +288,47 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             value = max(value, KEEPALIVE_MINIMUM)
 
         self._keepalive = value
+
+    @property
+    def mtu(self):
+        """
+        returns the mtu value
+        """
+        return self._mtu
+
+    @mtu.setter
+    def mtu(self, value):
+        """
+        Sets the mtu value
+        """
+        if value is not None:
+            if not isinstance(value, int):
+                raise ValueError('MTU value must be an integer')
+            elif value < 68 or value > 1500:
+                raise ValueError('MTU value must be in the range 68-1500')
+
+        self._mtu = value
+
+    @property
+    def table(self):
+        """
+        returns the table value
+        """
+        return self._table
+
+    @table.setter
+    def table(self, value):
+        """
+        Sets the table value
+        """
+        if value is not None:
+            if not isinstance(value, int):
+                raise ValueError('Table value must be an integer')
+            elif value < 1 or value > 252:
+                raise ValueError('Table value must be in the range 1-252')
+
+        self._table = value
+
 
     def config(self, config_cls=None):
         """

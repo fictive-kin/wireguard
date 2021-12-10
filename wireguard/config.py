@@ -168,6 +168,20 @@ class Config:  # pylint: disable=too-many-public-methods
         return f'# {self._peer.description}'
 
     @property
+    def mtu(self):
+        """
+        Returns the mtu for this peer
+        """
+        return f'MTU = {self._peer.mtu}'
+
+    @property
+    def table(self):
+        """
+        Returns the table for this peer
+        """
+        return f'Table = {self._peer.table}'
+
+    @property
     def interface(self):
         """
         Returns the Interface section of the config file
