@@ -304,7 +304,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         if value is not None:
             if not isinstance(value, int):
                 raise ValueError('MTU value must be an integer')
-            elif value < 68 or value > 1500:
+            elif value < 68 or value > 1500: # pylint: disable=no-else-raise
                 raise ValueError('MTU value must be in the range 68-1500')
 
         self._mtu = value
