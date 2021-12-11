@@ -324,8 +324,10 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         if value is not None:
             if not isinstance(value, int):
                 raise ValueError('Table value must be an integer')
-            if value < 1 or value > 252:
-                raise ValueError('Table value must be in the range 1-252')
+            if value == 0 \
+                or value in range(253, 255) \
+                    or value >= (2**31):
+                raise ValueError('Table value must be in the ranges 1-252, 256-2147483647')
 
         self._table = value
 
