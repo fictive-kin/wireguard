@@ -293,6 +293,10 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     def mtu(self):
         """
         returns the mtu value
+          WG Default = 1420 (dunno and leave it to automatic for best results)
+          if you have to fix mtu depending on outer:
+            ipv6 connections require 1280 as minimum (try 1300,1350,1400)
+            PPPoE = try 1412 or lower
         """
         return self._mtu
 
@@ -300,10 +304,6 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     def mtu(self, value):
         """
         Sets the mtu value
-        - WG Default = 1420 (dunno and leave it to automatic for best results)
-        if you have to fix mtu depending on outer:
-            - ipv6 connections require 1280 as minimum (try 1300,1350,1400)
-            - PPPoE = try 1412 or lower
         """
         if value is not None:
             if not isinstance(value, int):
@@ -316,14 +316,14 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     @property
     def table(self):
         """
-        returns the table value
+        returns the routing table value
         """
         return self._table
 
     @table.setter
     def table(self, value):
         """
-        Sets the table value
+        Sets the routing table value
         """
         if value is not None:
             if not isinstance(value, int):
