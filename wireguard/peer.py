@@ -300,12 +300,16 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     def mtu(self, value):
         """
         Sets the mtu value
+        - WG Default = 1420 (dunno and leave it to automatic for best results)
+        if you have to fix mtu depending on outer:
+            - ipv6 connections require 1280 as minimum (try 1300,1350,1400)
+            - PPPoE = try 1412 or lower
         """
         if value is not None:
             if not isinstance(value, int):
                 raise ValueError('MTU value must be an integer')
-            if value < 68 or value > 1500:
-                raise ValueError('MTU value must be in the range 68-1500')
+            if value < 1280 or value > 1420:
+                raise ValueError('MTU value must be in the range 1280-1420')
 
         self._mtu = value
 
