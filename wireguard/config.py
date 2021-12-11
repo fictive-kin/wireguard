@@ -31,8 +31,8 @@ INTERFACE_KEYS = [
 ]
 
 PEER_KEYS = [
-    'allowed_ips',
     'description',
+    'allowed_ips',
     'endpoint',
     'keepalive',
     'preshared_key',
@@ -169,7 +169,7 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the name/description for this peer as a comment
         """
-        return f'# {self._peer.description}'
+        return f'# Name = {self._peer.description}'
 
     @property
     def mtu(self):
