@@ -69,7 +69,8 @@ class Config:  # pylint: disable=too-many-public-methods
         Returns the DNS settings of the given peer for the config file
         """
 
-        return value_list_to_comma('DNS', self._peer.dns)
+        if bool(self._peer.dns):    # has items
+            return value_list_to_comma('DNS', self._peer.dns)
 
     @property
     def pre_up(self):
