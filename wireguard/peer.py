@@ -86,7 +86,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                  config_cls=None,
                  mtu=None,
                  table=None,
-        ):
+                 ):
 
         self.allowed_ips = IPNetworkSet()
         self.dns = IPAddressSet()
@@ -325,13 +325,17 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         """
         Sets the routing table value
         """
+
         if value is not None:
-            if not isinstance(value, int):
-                raise ValueError('Table value must be an integer')
-            if value == 0 \
-                or value in range(253, 255) \
-                    or value >= (2**31):
-                raise ValueError('Table value must be in the ranges 1-252, 256-2147483647')
+
+            if isinstance(value, int) and not \
+                    (0 < value < 253 or 255 < value < (2**31)):  # pylint: disable=no-else-raise
+                raise ValueError('Table must be in the ranges 1-252, 256-(2°31-1)')
+
+            # special values allowed (auto=default, off=no route created)
+            # ref: https://git.zx2c4.com/wireguard-tools/about/src/man/wg-quick.8
+            elif value not in ('auto', 'off'):
+                raise ValueError('Table must be "auto", "off" or an integer value')
 
         self._table = value
 
