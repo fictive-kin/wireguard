@@ -18,6 +18,16 @@ from .service import Interface
 from .utils import generate_key, public_key
 
 
+INHERITABLE_OPTIONS = [
+    'dns',
+    'interface',
+    'keepalive',
+    'mtu',
+    'port',
+    'preshared_key',
+]
+
+
 class Server(Peer):
     """
     The WireGuard Server
@@ -164,9 +174,13 @@ class Server(Peer):
         if 'address' not in kwargs:
             kwargs.update({'address': self.unique_address()})
 
-        for key in ['port', 'keepalive', 'interface', 'dns']:
+        # These are keys that should be propagated from the server to a remote peer, only
+        # if they are not already being explicitly set at peer creation
+        for key in INHERITABLE_OPTIONS:
             if key not in kwargs:
-                kwargs.update({key: getattr(self, key)})
+                kwargs.update({key: getattr(self, key, None)})
+        if kwargs['mtu'] != self.mtu:
+            raise ValueError('MTU cannot be different between different peers')
 
         peer = peer_cls(
             description,
