@@ -328,14 +328,14 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         if value is not None:
 
-            if isinstance(value, int) and not \
-                    (0 < value < 253 or 255 < value < (2**31)):  # pylint: disable=no-else-raise
-                raise ValueError('Table must be in the ranges 1-252, 256-(2^31-1)')
-
             # special values allowed (auto=default, off=no route created)
             # ref: https://git.zx2c4.com/wireguard-tools/about/src/man/wg-quick.8
-            elif not isinstance(value, str) or value not in ('auto', 'off'):
+            if isinstance(value, str) and value not in ('auto', 'off'):  # pylint: disable=no-else-raise
                 raise ValueError('Table must be "auto", "off" or an integer value')
+            elif isinstance(value, int) and not \
+                    (0 < value < 253 or 255 < value < (2**31)) \
+                    or isinstance(value, bool):
+                raise ValueError('Table must be in the ranges 1-252, 256-(2^31-1)')
 
         self._table = value
 
