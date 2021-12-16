@@ -306,8 +306,10 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         Sets the mtu value
         """
         if value is not None:
-            if not isinstance(value, int):
+            # Check for bool specifically, because bool is a subclass of int
+            if not isinstance(value, int) or isinstance(value, bool):
                 raise ValueError('MTU value must be an integer')
+
             if value < 1280 or value > 1420:
                 raise ValueError('MTU value must be in the range 1280-1420')
 
@@ -328,14 +330,23 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         if value is not None:
 
-            # special values allowed (auto=default, off=no route created)
-            # ref: https://git.zx2c4.com/wireguard-tools/about/src/man/wg-quick.8
-            if isinstance(value, str) and value not in ('auto', 'off'):  # pylint: disable=no-else-raise
-                raise ValueError('Table must be "auto", "off" or an integer value')
-            elif isinstance(value, int) and not \
-                    (0 < value < 253 or 255 < value < (2**31)) \
-                    or isinstance(value, bool):
-                raise ValueError('Table must be in the ranges 1-252, 256-(2^31-1)')
+            try:
+                # bool is a subclass of int and can be evaluated in the range condition,
+                # _but_ we want to give the correct error message to the user, since
+                # setting `Table = True` or `Table = False` would make a WireGuard config
+                # file fail to parse correctly. We also don't want to risk `True` becoming
+                # `Table = 1` as that is probably not what the user would have wanted.
+                if isinstance(value, bool):
+                    raise TypeError('Table must not be a boolean')
+
+                if not (0 < value < 253 or 255 < value < (2**31)):
+                    raise ValueError('Table must be in the ranges 1-252, 256-(2°31-1)')
+
+            except TypeError as exc:
+                # special values allowed (auto=default, off=no route created)
+                # ref: https://git.zx2c4.com/wireguard-tools/about/src/man/wg-quick.8
+                if value not in ('auto', 'off'):
+                    raise ValueError('Table must be "auto", "off" or an integer value') from exc
 
         self._table = value
 
