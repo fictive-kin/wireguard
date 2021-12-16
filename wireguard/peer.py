@@ -57,6 +57,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     post_up = None
     pre_down = None
     post_down = None
+    _mtu = None
+    _table = None
 
     _config = None
     peers = None
@@ -82,7 +84,9 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                  interface=None,
                  peers=None,
                  config_cls=None,
-        ):
+                 mtu=None,
+                 table=None,
+                 ):
 
         self.allowed_ips = IPNetworkSet()
         self.dns = IPAddressSet()
@@ -116,6 +120,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         self.port = port
         self.interface = interface
         self.keepalive = keepalive
+        self.mtu = mtu
+        self.table = table
 
         if save_config is not None:
             self.save_config = save_config
@@ -282,6 +288,68 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             value = max(value, KEEPALIVE_MINIMUM)
 
         self._keepalive = value
+
+    @property
+    def mtu(self):
+        """
+        returns the mtu value
+          WG Default = 1420 (dunno and leave it to automatic for best results)
+          if you have to fix mtu depending on outer:
+            ipv6 connections require 1280 as minimum (try 1300,1350,1400)
+            PPPoE = try 1412 or lower
+        """
+        return self._mtu
+
+    @mtu.setter
+    def mtu(self, value):
+        """
+        Sets the mtu value
+        """
+        if value is not None:
+            # Check for bool specifically, because bool is a subclass of int
+            if not isinstance(value, int) or isinstance(value, bool):
+                raise ValueError('MTU value must be an integer')
+
+            if value < 1280 or value > 1420:
+                raise ValueError('MTU value must be in the range 1280-1420')
+
+        self._mtu = value
+
+    @property
+    def table(self):
+        """
+        returns the routing table value
+        """
+        return self._table
+
+    @table.setter
+    def table(self, value):
+        """
+        Sets the routing table value
+        """
+
+        if value is not None:
+
+            try:
+                # bool is a subclass of int and can be evaluated in the range condition,
+                # _but_ we want to give the correct error message to the user, since
+                # setting `Table = True` or `Table = False` would make a WireGuard config
+                # file fail to parse correctly. We also don't want to risk `True` becoming
+                # `Table = 1` as that is probably not what the user would have wanted.
+                if isinstance(value, bool):
+                    raise TypeError('Table must not be a boolean')
+
+                if not (0 < value < 253 or 255 < value < (2**31)):
+                    raise ValueError('Table must be in the ranges 1-252, 256-(2°31-1)')
+
+            except TypeError as exc:
+                # special values allowed (auto=default, off=no route created)
+                # ref: https://git.zx2c4.com/wireguard-tools/about/src/man/wg-quick.8
+                if value not in ('auto', 'off'):
+                    raise ValueError('Table must be "auto", "off" or an integer value') from exc
+
+        self._table = value
+
 
     def config(self, config_cls=None):
         """

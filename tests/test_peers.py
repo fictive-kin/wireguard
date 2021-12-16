@@ -32,6 +32,8 @@ def test_basic_peer():
     assert peer.public_key == public_key(peer.private_key)
 
     assert not peer.peers
+    assert not peer.mtu
+    assert not peer.table
     assert not peer.pre_up
     assert not peer.post_up
     assert not peer.pre_down

@@ -26,6 +26,8 @@ INTERFACE_KEYS = [
     'pre_down',
     'post_down',
     'save_config',
+    'mtu',
+    'table',
 ]
 
 PEER_KEYS = [
@@ -66,6 +68,10 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the DNS settings of the given peer for the config file
         """
+
+        # do not write empty DNS = entry
+        if not bool(self._peer.dns):
+            return None
 
         return value_list_to_comma('DNS', self._peer.dns)
 
@@ -164,6 +170,20 @@ class Config:  # pylint: disable=too-many-public-methods
         Returns the name/description for this peer as a comment
         """
         return f'# {self._peer.description}'
+
+    @property
+    def mtu(self):
+        """
+        Returns the mtu for this peer
+        """
+        return f'MTU = {self._peer.mtu}'
+
+    @property
+    def table(self):
+        """
+        Returns the table for this peer
+        """
+        return f'Table = {self._peer.table}'
 
     @property
     def interface(self):
