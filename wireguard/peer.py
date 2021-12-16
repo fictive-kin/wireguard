@@ -129,12 +129,12 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         # Always add own address to allowed IPs, to ensure routing at least makes it that far
         self.allowed_ips.add(ip_network(self.address))
         if allowed_ips:
-            if isinstance(allowed_ips, (list, set)):
+            if isinstance(allowed_ips, (list, set, tuple)):
                 self.allowed_ips.extend(allowed_ips)
             else:
                 self.allowed_ips.add(allowed_ips)
         if dns:
-            if isinstance(dns, (list, set)):
+            if isinstance(dns, (list, set, tuple)):
                 self.dns.extend(dns)
             else:
                 self.dns.add(dns)
@@ -147,7 +147,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         if post_down:
             self.post_down.append(post_down)
         if peers:
-            if isinstance(peers, (list, set)):
+            if isinstance(peers, (list, set, tuple)):
                 self.peers.extend(peers)
             else:
                 self.peers.add(peers)

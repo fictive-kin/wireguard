@@ -27,7 +27,7 @@ class ClassedSet(set):
         if not value:
             raise ValueError(f'Cannot add an empty value to {self.__class__.__name__}')
 
-        if isinstance(value, (list, set)):
+        if isinstance(value, (list, set, tuple,)):
             raise ValueError('Provided value must not be a list')
 
         super().add(self._coerce_value(value))
@@ -40,11 +40,12 @@ class ClassedSet(set):
         if not values:
             raise ValueError(f'Cannot add an empty value to {self.__class__.__name__}')
 
-        if not isinstance(values, (list, set)):
+        if not isinstance(values, (list, set, tuple,)):
             values = [values]
 
         for value in values:
             self.add(value)
+
 
 class IPAddressSet(ClassedSet):
     """
@@ -56,8 +57,19 @@ class IPAddressSet(ClassedSet):
         Coerce given values into an IP Address object
         """
 
+        # Check for booleans specifically, as those are technically ints, and will not
+        # cause `ip_address()` to raise an error
+        if isinstance(value, bool):
+            raise ValueError(
+                f'Could not convert to IP Address: {type(value)}({value})')
+
         if not isinstance(value, (IPv4Address, IPv6Address)):
-            value = ip_address(value)
+            try:
+                value = ip_address(value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f'Could not convert to IP Address: {type(value)}({value})') from exc
+
         return value
 
 
@@ -77,8 +89,19 @@ class IPNetworkSet(ClassedSet):
         by `ip_network()` when no netmask is specified. No special handling is required.
         """
 
+        # Check for booleans specifically, as those are technically ints, and will not
+        # cause `ip_network()` to raise an error
+        if isinstance(value, bool):
+            raise ValueError(
+                f'Could not convert to IP Network: {type(value)}({value})')
+
         if not isinstance(value, (IPv4Network, IPv6Network)):
-            value = ip_network(value, strict=self._ip_network_strict)
+            try:
+                value = ip_network(value, strict=self._ip_network_strict)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f'Could not convert to IP Network: {type(value)}({value})') from exc
+
         return value
 
 

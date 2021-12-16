@@ -90,7 +90,7 @@ class InterfacePeer:
                 if value is None:
                     continue
 
-                if not isinstance(value, (list, set)):
+                if not isinstance(value, (list, set, tuple)):
                     subnets = value.split(',')
                 else:
                     subnets = value
@@ -132,7 +132,7 @@ class Interface:
         ]
 
         if extra:
-            if not isinstance(extra, (list, set)):
+            if not isinstance(extra, (list, set, tuple)):
                 cmd.append(extra)
             else:
                 cmd.extend(extra)
