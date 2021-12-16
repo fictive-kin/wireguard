@@ -81,6 +81,9 @@ class Config:  # pylint: disable=too-many-public-methods
         Returns the PreUp settings of the given peer for the config file
         """
 
+        if self._peer.pre_up is None:
+            return None
+
         return value_list_to_multiple('PreUp', self._peer.pre_up)
 
     @property
@@ -88,6 +91,9 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the PreDown settings of the given peer for the config file
         """
+
+        if self._peer.pre_down is None:
+            return None
 
         return value_list_to_multiple('PreDown', self._peer.pre_down)
 
@@ -97,6 +103,9 @@ class Config:  # pylint: disable=too-many-public-methods
         Returns the PostUp settings of the given peer for the config file
         """
 
+        if self._peer.post_up is None:
+            return None
+
         return value_list_to_multiple('PostUp', self._peer.post_up)
 
     @property
@@ -105,6 +114,9 @@ class Config:  # pylint: disable=too-many-public-methods
         Returns the PostDown settings of the given peer for the config file
         """
 
+        if self._peer.post_down is None:
+            return None
+
         return value_list_to_multiple('PostDown', self._peer.post_down)
 
     @property
@@ -112,6 +124,10 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the PresharedKey for this peer
         """
+
+        if self._peer.preshared_key is None:
+            return None
+
         return f'PresharedKey = {self._peer.preshared_key}'
 
     @property
@@ -133,6 +149,10 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the SaveConfig for this peer
         """
+
+        if self._peer.save_config is None:
+            return None
+
         value = 'true' if self._peer.save_config else 'false'
         return f'SaveConfig = {value}'
 
@@ -141,6 +161,10 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the endpoint for this peer
         """
+
+        if self._peer.endpoint is None:
+            return None
+
         return f'Endpoint = {self._peer.endpoint}'
 
     @property
@@ -155,6 +179,10 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the PersistentKeepalive for this peer
         """
+
+        if self._peer.keepalive is None:
+            return None
+
         return f'PersistentKeepalive = {self._peer.keepalive}'
 
     @property
@@ -169,6 +197,10 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the name/description for this peer as a comment
         """
+
+        if self._peer.description is None:
+            return None
+
         return f'# {self._peer.description}'
 
     @property
@@ -176,6 +208,10 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the mtu for this peer
         """
+
+        if self._peer.mtu is None:
+            return None
+
         return f'MTU = {self._peer.mtu}'
 
     @property
@@ -183,6 +219,10 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the table for this peer
         """
+
+        if self._peer.table is None:
+            return None
+
         return f'Table = {self._peer.table}'
 
     @property
@@ -205,9 +245,42 @@ class Config:  # pylint: disable=too-many-public-methods
         Returns the Peer sections for all connectable peers
         """
 
+        # Guard against potentially having been instantiated with an invalid peer object
+        if not isinstance(getattr(self._peer, 'peers', None), (list, set)):
+            return ''
+
         peers_data = ''
-        for peer in getattr(self._peer, 'peers', []):
-            peers_data += peer.config().remote_config
+        for peer in self._peer.peers:
+            peer_config = peer.config()
+            peers_data += peer_config.remote_config
+
+            extras = []
+
+            # Need to take special measures when the preshared keys aren't identical
+            # And there is no need for an `else` clause, as the value would already have
+            # been included by the `remote_config` returned data for normal cases
+            if self.preshared_key != peer_config.preshared_key:
+
+                # When only the remote peer has a key set, we need to use it too
+                if self.preshared_key is None:
+                    extras.append(peer_config.preshared_key)
+
+                # When only this peer has a key set, the remote peer needs to use it too
+                elif peer_config.preshared_key is None:
+                    extras.append(self.preshared_key)
+
+                # The keys have both been set, but are not a match.
+                else:
+                    raise ValueError(f'Preshared keys do not match for {self._peer} and {peer}')
+
+            # Keepalive is always a local->remote keepalive, so we need to set the config
+            # value based on our local value, rather than the remote's value.
+            if self.keepalive:
+                extras.append(self.keepalive)
+
+            if extras:
+                peers_data = os.linesep.join((peers_data, *extras))
+
         return peers_data
 
     @property
@@ -218,6 +291,12 @@ class Config:  # pylint: disable=too-many-public-methods
 
         data = ['[Peer]']
         for item in PEER_KEYS:
+            # Despite `PersistentKeepalive` being a peer option, it needs to be
+            # set from the local side, not the remote side. Thus we cannot use
+            # the remote peer's value of it or we'll be setup in reverse.
+            if item == 'keepalive':
+                continue
+
             value = getattr(self, item, None)
             if value:
                 data.append(value)
