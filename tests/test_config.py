@@ -17,7 +17,7 @@ from wireguard import (
 from wireguard.utils import IPAddressSet
 
 
-def test_basic_config():
+def test_basic_server():
     subnet = '192.168.0.0/24'
     address = '192.168.0.1'
 
@@ -28,7 +28,8 @@ def test_basic_config():
     )
 
     config = ServerConfig(server)
-    config_lines = config.local_config.split('\n')
+    wg_config = config.local_config
+    config_lines = wg_config.split('\n')
 
     # Ensure that [Interface] is first in the config, allowing for blank lines before
     for line in config_lines:
@@ -36,11 +37,14 @@ def test_basic_config():
             assert line == '[Interface]'
             break
 
+    # Check that these are on a line alone in the config output
     assert f'Address = {address}/24' in config_lines
-
-    assert 'DNS =' not in config_lines
     assert '# test-server' not in config_lines  # Should only be present in Peer section on remote
     assert '[Peer]' not in config_lines  # We haven't configured any peers, so this shouldn't exist
+
+    # Check that these don't appear anywhere at all because of how basic this config is
+    for option in ['DNS', 'PreUp', 'PostUp', 'PreDown', 'PostDown', 'SaveConfig', 'MTU', 'Table', 'AllowedIPs', 'Endpoint', 'PersistentKeepalive', 'PresharedKey', 'PublicKey']:
+        assert f'{option} =' not in wg_config
 
 
 def test_basic_peer():
@@ -52,7 +56,8 @@ def test_basic_peer():
     )
 
     config = Config(peer)
-    config_lines = config.local_config.split('\n')
+    wg_config = config.local_config
+    config_lines = wg_config.split('\n')
 
     # Ensure that [Interface] is first in the config, allowing for blank lines before
     for line in config_lines:
@@ -62,9 +67,12 @@ def test_basic_peer():
 
     assert f'Address = {address}/32' in config_lines
 
-    assert 'DNS =' not in config_lines
     assert '# test-peer' not in config_lines  # Should only be present in Peer section on remote
     assert '[Peer]' not in config_lines  # We haven't configured any peers, so this shouldn't exist
+
+    # Check that these don't appear anywhere at all because of how basic this config is
+    for option in ['DNS', 'PreUp', 'PostUp', 'PreDown', 'PostDown', 'SaveConfig', 'MTU', 'Table', 'AllowedIPs', 'Endpoint', 'PersistentKeepalive', 'PresharedKey', 'PublicKey']:
+        assert f'{option} =' not in wg_config
 
 
 def test_inadmissible_non_peer():
@@ -74,7 +82,8 @@ def test_inadmissible_non_peer():
 
     with pytest.raises(ValueError) as exc:
         config = Config(NonPeer())
-        assert 'provide a valid Peer' in str(exc.value)
+
+    assert 'provide a valid Peer' in str(exc.value)
 
 
 def test_admissible_non_peer():
@@ -91,7 +100,7 @@ def test_admissible_non_peer():
     assert 'PublicKey = something' in config.remote_config
 
 
-def test_write_server_config():
+def test_write_server_config_no_params():
 
     subnet = '192.168.0.0/24'
     address = '192.168.0.1'
@@ -111,7 +120,39 @@ def test_write_server_config():
         ], any_order=True)
 
 
-def test_write_peer_config():
+@pytest.mark.parametrize(
+    ('interface', 'path', 'full_path', 'peers_full_path'),
+    [
+        (None, None, '/etc/wireguard/wg0.conf', '/etc/wireguard/wg0-peers.conf',),  # Default options
+        ('wg3', None, '/etc/wireguard/wg3.conf', '/etc/wireguard/wg3-peers.conf',),
+        (None, '/opt/my-wg-dir', '/opt/my-wg-dir/wg0.conf', '/opt/my-wg-dir/wg0-peers.conf',),
+        ('wg1', '/opt/my-other-wg-dir', '/opt/my-other-wg-dir/wg1.conf', '/opt/my-other-wg-dir/wg1-peers.conf',),
+    ])
+def test_write_server_config(interface, path, full_path, peers_full_path):
+    subnet = '192.168.0.0/24'
+    address = '192.168.0.1'
+
+    server = Server(
+        'test-server',
+        subnet,
+        address=address,
+        interface=interface
+    )
+
+    config = server.config()
+    assert config.full_path(path) == full_path
+    assert config.peers_full_path(path) == peers_full_path
+
+    with patch('builtins.open', mock_open()) as mo:
+        config.write(path)
+
+        mo.assert_has_calls([
+            call(full_path, mode='w', encoding='utf-8'),
+            call(peers_full_path, mode='w', encoding='utf-8'),
+        ], any_order=True)
+
+
+def test_write_peer_config_no_params():
 
     address = '192.168.0.1'
 
@@ -128,22 +169,30 @@ def test_write_peer_config():
         ], any_order=True)
 
 
-def test_peer_qrcode():
-
-    address = '192.168.0.1'
+@pytest.mark.parametrize(
+    ('interface', 'path', 'full_path',),
+    [
+        (None, None, '/etc/wireguard/wg0.conf',),  # Default options
+        ('wg3', None, '/etc/wireguard/wg3.conf',),
+        (None, '/opt/my-wg-dir', '/opt/my-wg-dir/wg0.conf',),
+        ('wg1', '/opt/my-other-wg-dir', '/opt/my-other-wg-dir/wg1.conf',),
+    ])
+def test_write_peer_config(interface, path, full_path):
+    address = '192.168.0.2'
 
     peer = Peer(
         'test-peer',
         address=address,
+        interface=interface,
     )
 
-    try:
-        # If qrcode is present in the venv, test it works.
-        import qrcode
-        assert peer.config().qrcode
+    config = Config(peer)
 
-    except ImportError:
-        # If qrcode is not present in the venv, test it fails appropriately.
-        with pytest.raises(AttributeError) as exc:
-            peer.config().qrcode
-            assert 'add the qrcode' in str(exc.value)
+    assert config.full_path(path) == full_path
+
+    with patch('builtins.open', mock_open()) as mo:
+        peer.config().write(path)
+
+        mo.assert_has_calls([
+            call(full_path, mode='w', encoding='utf-8'),
+        ], any_order=True)
