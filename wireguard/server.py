@@ -44,7 +44,32 @@ class Server(Peer):
             ):
 
         if not isinstance(subnet, (IPv4Network, IPv6Network)):
-            subnet = ip_network(subnet)
+            try:
+                # If subnet includes host bits, then ip_network will fail, but we can probably
+                # recover what the user actually wanted to do.
+                subnet = ip_network(subnet)
+
+            except ValueError as exc:
+                if not isinstance(subnet, str) or '/' not in subnet:
+                    raise exc
+
+                if 'address' in kwargs and kwargs['address'] is not None:
+                    raise ValueError(
+                        'You cannot provide both an address AND a subnet with host bits set!'
+                    ) from exc
+
+                # The user is providing a subnet with host bits set, but `ip_address` does not
+                # allow subnet to be included when parsing the address. Therefore, we chop it
+                # out, leaving only the desired IP.
+                kwargs['address'] = ip_address(subnet.split('/')[0])
+
+                # We've got the desired address, now we can set the subnet appropriately.
+                subnet = ip_network(subnet, strict=False)
+
+        if subnet.prefixlen == subnet.max_prefixlen:
+            raise ValueError('You cannot use an IPv4 `/32` subnet, nor an IPv6 '
+                             '`/128` subnet as that only gives you 1 IP address '
+                             'to use, and therefore you cannot have any peers!')
 
         self.subnet = subnet
 
