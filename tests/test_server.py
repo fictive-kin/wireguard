@@ -571,3 +571,45 @@ def test_server_invalid_table(table, exception_message):
         )
 
     assert exception_message in str(exc.value)
+
+@pytest.mark.parametrize(
+    ('subnet_with_host_bits', 'subnet', 'address',),
+    [
+        ('192.168.0.5/24', '192.168.0.0/24', '192.168.0.5',),
+        ('10.12.2.18/16', '10.12.0.0/16', '10.12.2.18',),
+        ('fde2:3a65:ca93:3125::4523:3425/64', 'fde2:3a65:ca93:3125::/64', 'fde2:3a65:ca93:3125::4523:3425',),
+    ])
+def test_server_subnet_with_host_bits(subnet_with_host_bits, subnet, address):
+
+    server = Server(
+        'test-server',
+        subnet_with_host_bits,
+    )
+
+    assert str(server.subnet) == subnet
+    assert str(server.address) == address
+
+
+@pytest.mark.parametrize(
+    ('subnet', 'address', 'exception_message',),
+    [
+        (False, None, 'that only gives you 1 IP address',),
+        (True, None, 'that only gives you 1 IP address',),
+        (None, None, 'does not appear to be an IPv4 or IPv6 network',),
+        ('beep', None, 'does not appear to be an IPv4 or IPv6 network',),
+        (-1, None, 'does not appear to be an IPv4 or IPv6 network',),
+        ('192.168.1.12/24', '192.168.1.1', 'both an address AND a subnet',),
+        ('192.168.1.12/32', None, 'that only gives you 1 IP address',),
+        ('fde2:3a65:ca93:3125::4523:3425/128', None, 'that only gives you 1 IP address',),
+        ('fde2:3a65:ca93:3125::4523:3425/64', 'fde2:3a65:ca93:3125::5234:a423', 'both an address AND a subnet',),
+    ])
+def test_server_invalid_subnet(subnet, address, exception_message):
+
+    with pytest.raises(ValueError) as exc:
+        server = Server(
+            'test-server',
+            subnet,
+            address=address,
+        )
+
+    assert exception_message in str(exc.value)
