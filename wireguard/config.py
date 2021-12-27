@@ -279,7 +279,9 @@ class Config:  # pylint: disable=too-many-public-methods
                 extras.append(self.keepalive)
 
             if extras:
-                peers_data = os.linesep.join((peers_data, *extras))
+                peers_data = os.linesep.join((peers_data, *extras, ""))
+            else:
+                peers_data = os.linesep.join((peers_data, ""))
 
         return peers_data
 
