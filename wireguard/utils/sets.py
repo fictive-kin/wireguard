@@ -72,6 +72,11 @@ class IPAddressSet(ClassedSet):
 
         return value
 
+    def __str__(self):
+        string_values = []
+        for ip in self:  # pylint: disable=invalid-name
+            string_values.append(f'{ip.address}/{ip.max_prefixlen}')
+        return ','.join(string_values)
 
 
 class IPNetworkSet(ClassedSet):
@@ -103,6 +108,12 @@ class IPNetworkSet(ClassedSet):
                     f'Could not convert to IP Network: {type(value)}({value})') from exc
 
         return value
+
+    def __str__(self):
+        string_values = []
+        for net in self:
+            string_values.append(f'{str(net.network_address)}/{net.prefixlen}')
+        return ','.join(string_values)
 
 
 class NonStrictIPNetworkSet(IPNetworkSet):
