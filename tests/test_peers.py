@@ -27,8 +27,9 @@ def test_basic_peer():
         address=address,
     )
 
-    assert isinstance(peer.address, IPv4Address)
-    assert str(peer.address) == address
+    assert isinstance(peer.ipv4, IPv4Address)
+    assert str(peer.ipv4) == address
+    assert peer.ipv6 is None
 
     assert peer.port == PORT
     assert peer.interface == INTERFACE
@@ -85,8 +86,9 @@ def test_peer_mtu(mtu):
         mtu=mtu,
     )
 
-    assert isinstance(peer.address, IPv4Address)
-    assert str(peer.address) == address
+    assert isinstance(peer.ipv4, IPv4Address)
+    assert str(peer.ipv4) == address
+    assert peer.ipv6 is None
 
     assert peer.port == PORT
     assert peer.interface == INTERFACE
@@ -148,8 +150,9 @@ def test_peer_dns():
         dns=ip_address(dns),
     )
 
-    assert isinstance(peer.address, IPv4Address)
-    assert str(peer.address) == address
+    assert isinstance(peer.ipv4, IPv4Address)
+    assert str(peer.ipv4) == address
+    assert peer.ipv6 is None
 
     assert peer.port == PORT
     assert peer.interface == INTERFACE

@@ -24,10 +24,12 @@ def test_basic_server():
         address=address,
     )
 
-    assert isinstance(server.address, IPv4Address)
-    assert isinstance(server.subnet, IPv4Network)
-    assert str(server.address) == address
-    assert server.address in ip_network(subnet)
+    assert isinstance(server.ipv4, IPv4Address)
+    assert isinstance(server.ipv4_subnet, IPv4Network)
+    assert str(server.ipv4) == address
+    assert server.ipv4 in ip_network(subnet)
+    assert server.ipv6 is None
+    assert server.ipv6_subnet is None
 
     assert server.port == PORT
     assert server.interface == INTERFACE
@@ -79,9 +81,10 @@ def test_server_with_a_peer():
     )
 
     assert isinstance(peer, Peer)
-    assert isinstance(peer.address, IPv4Address)
-    assert peer.address in ip_network(subnet)
-    assert peer.address != server.address
+    assert isinstance(peer.ipv4, IPv4Address)
+    assert peer.ipv4 in ip_network(subnet)
+    assert peer.ipv4 != server.ipv4
+    assert peer.ipv6 is None
 
     assert server.private_key is not None
     assert peer.private_key is not None
@@ -101,14 +104,14 @@ def test_server_with_a_peer():
     server_lines = server_config.local_config.split('\n')
     peer_lines = peer_config.local_config.split('\n')
 
-    assert f'Address = {server.address}/{server.subnet.prefixlen}' in server_lines
-    assert f'Address = {peer.address}/{peer.address.max_prefixlen}' not in server_lines
+    assert f'Address = {server.ipv4}/{server.ipv4_subnet.prefixlen}' in server_lines
+    assert f'Address = {peer.ipv4}/{peer.ipv4.max_prefixlen}' not in server_lines
     assert '[Peer]' in server_lines
     assert '# test-server' not in server_lines  # Should only be present in Peer section on remote
     assert '# test-peer' in server_lines
 
-    assert f'Address = {peer.address}/{peer.address.max_prefixlen}' in peer_lines
-    assert f'Address = {server.address}/{server.subnet.prefixlen}' not in peer_lines
+    assert f'Address = {peer.ipv4}/{peer.ipv4.max_prefixlen}' in peer_lines
+    assert f'Address = {server.ipv4}/{server.ipv4_subnet.prefixlen}' not in peer_lines
     assert '[Peer]' in peer_lines
     assert '# test-peer' not in peer_lines  # Should only be present in Peer section on remote
     assert '# test-server' in peer_lines
@@ -586,8 +589,12 @@ def test_server_subnet_with_host_bits(subnet_with_host_bits, subnet, address):
         subnet_with_host_bits,
     )
 
-    assert str(server.subnet) == subnet
-    assert str(server.address) == address
+    assert str(server.ipv4_subnet) == subnet or str(server.ipv6_subnet) == subnet
+    assert server.ipv4_subnet != server.ipv6_subnet
+    if server.ipv4:
+        assert str(server.ipv4) == address
+    else:
+        assert str(server.ipv6) == address
 
 
 @pytest.mark.parametrize(
