@@ -1,7 +1,11 @@
 
 import pytest
 
-from subnet import ip_network, IPv4Network, IPv4Address
+from subnet import (
+    ip_network,
+    IPv4Network,
+    IPv4Address,
+)
 
 from wireguard import (
     INTERFACE,
@@ -575,26 +579,63 @@ def test_server_invalid_table(table, exception_message):
 
     assert exception_message in str(exc.value)
 
+
 @pytest.mark.parametrize(
-    ('subnet_with_host_bits', 'subnet', 'address',),
+    (
+        'ipv4_subnet_with_host_bits',
+        'ipv4_subnet',
+        'ipv4_address',
+        'ipv6_subnet_with_host_bits',
+        'ipv6_subnet',
+        'ipv6_address',
+    ),
     [
-        ('192.168.0.5/24', '192.168.0.0/24', '192.168.0.5',),
-        ('10.12.2.18/16', '10.12.0.0/16', '10.12.2.18',),
-        ('fde2:3a65:ca93:3125::4523:3425/64', 'fde2:3a65:ca93:3125::/64', 'fde2:3a65:ca93:3125::4523:3425',),
+        ('192.168.0.5/24', '192.168.0.0/24', '192.168.0.5', None, None, None,),
+        (
+            None, None, None,
+           'fde2:3a65:ca93:3125::4523:3425/64',
+           'fde2:3a65:ca93:3125::/64',
+           'fde2:3a65:ca93:3125::4523:3425',
+        ),
+        (
+           '10.12.2.18/16',
+           '10.12.0.0/16',
+           '10.12.2.18',
+           'fd1d:59db:21c2:9842:5678:deed:beef:973/64',
+           'fd1d:59db:21c2:9842::/64',
+           'fd1d:59db:21c2:9842:5678:deed:beef:973',
+        ),
     ])
-def test_server_subnet_with_host_bits(subnet_with_host_bits, subnet, address):
+def test_server_subnet_with_host_bits(ipv4_subnet_with_host_bits, ipv4_subnet, ipv4_address,
+                                      ipv6_subnet_with_host_bits, ipv6_subnet, ipv6_address):
+
+    if ipv4_subnet_with_host_bits and ipv6_subnet_with_host_bits:
+        subnet_with_host_bits = [ipv4_subnet_with_host_bits, ipv6_subnet_with_host_bits]
+    elif ipv6_subnet_with_host_bits:
+        subnet_with_host_bits = ipv6_subnet_with_host_bits
+    else:
+        subnet_with_host_bits = ipv4_subnet_with_host_bits
 
     server = Server(
         'test-server',
         subnet_with_host_bits,
     )
 
-    assert str(server.ipv4_subnet) == subnet or str(server.ipv6_subnet) == subnet
     assert server.ipv4_subnet != server.ipv6_subnet
-    if server.ipv4:
-        assert str(server.ipv4) == address
+
+    if ipv4_subnet_with_host_bits:
+        assert str(server.ipv4_subnet) == ipv4_subnet
+        assert str(server.ipv4) == ipv4_address
     else:
-        assert str(server.ipv6) == address
+        assert server.ipv4_subnet is None
+        assert server.ipv4 is None
+
+    if ipv6_subnet_with_host_bits:
+        assert str(server.ipv6_subnet) == ipv6_subnet
+        assert str(server.ipv6) == ipv6_address
+    else:
+        assert server.ipv6_subnet is None
+        assert server.ipv6 is None
 
 
 @pytest.mark.parametrize(
@@ -608,7 +649,33 @@ def test_server_subnet_with_host_bits(subnet_with_host_bits, subnet, address):
         ('192.168.1.12/24', '192.168.1.1', 'both an address AND a subnet',),
         ('192.168.1.12/32', None, 'that only gives you 1 IP address',),
         ('fde2:3a65:ca93:3125::4523:3425/128', None, 'that only gives you 1 IP address',),
-        ('fde2:3a65:ca93:3125::4523:3425/64', 'fde2:3a65:ca93:3125::5234:a423', 'both an address AND a subnet',),
+        (
+           'fde2:3a65:ca93:3125::4523:3425/64',
+           'fde2:3a65:ca93:3125::5234:a423',
+           'both an address AND a subnet',
+        ),
+        (
+            [
+                'fde2:3a65:ca93:3125::4523:3425/64',
+                '10.10.10.10/16',
+                'fd1d:59db:21c2:9842:5678:deed:beef:973/64',
+            ],
+            None,
+            'cannot set more than 2 core subnets',
+        ),
+        (
+            ['10.10.10.10/16', '10.250.250.250/16',],
+            None,
+            'cannot set 2 IPv4 core subnets',
+        ),
+        (
+            [
+                'fde2:3a65:ca93:3125::4523:3425/64',
+                'fd1d:59db:21c2:9842:5678:deed:beef:973/64',
+            ],
+            None,
+            'cannot set 2 IPv6 core subnets',
+        ),
     ])
 def test_server_invalid_subnet(subnet, address, exception_message):
 

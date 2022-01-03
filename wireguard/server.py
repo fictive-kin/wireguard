@@ -51,6 +51,7 @@ class Server(Peer):
             raise ValueError('You cannot set more than 2 core subnets: 1 IPv4 + 1 IPv6. '
                              'Use AllowedIPs instead.')
 
+        addresses_from_subnets = []
         for net in subnet:
             if not isinstance(net, (IPv4Network, IPv6Network)):
                 try:
@@ -70,7 +71,7 @@ class Server(Peer):
                     # The user is providing a subnet with host bits set, but `ip_address` does not
                     # allow subnet to be included when parsing the address. Therefore, we chop it
                     # out, leaving only the desired IP.
-                    kwargs['address'] = ip_address(net.split('/')[0])
+                    addresses_from_subnets.append(ip_address(net.split('/')[0]))
 
                     # We've got the desired address, now we can set the subnet appropriately.
                     net = ip_network(net, strict=False)
@@ -93,7 +94,10 @@ class Server(Peer):
                 self.ipv6_subnet = net
 
         if 'address' not in kwargs:
-            kwargs.update({'address': self.unique_address()})
+            if addresses_from_subnets:
+                kwargs.update({'address': addresses_from_subnets})
+            else:
+                kwargs.update({'address': self.unique_address()})
 
         if 'config_cls' not in kwargs:
             kwargs.update({'config_cls': ServerConfig})
