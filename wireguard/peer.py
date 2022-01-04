@@ -1,4 +1,5 @@
 
+import json
 
 from subnet import (
     ip_address,
@@ -11,6 +12,7 @@ from .utils import (
     ClassedSet,
     IPAddressSet,
     IPNetworkSet,
+    JSONEncoder,
 )
 from .config import Config
 from .constants import (
@@ -159,6 +161,53 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         A simplistic representation of this object
         """
         return f'<{self.__class__.__name__} iface={self.interface} address={self.address}>'
+
+    def __iter__(self):
+        """
+        Returns a dict of the peer's attributes
+
+        Note: the `peers` attribute is handled specially to prevent circular references
+              when using `json.dumps()` of Peer objects. Should you desire to dump more
+              attributes from each peer, you will need to do so manually.
+        """
+
+        peers = []
+        for peer in self.peers:
+            peers.append({
+                'address': peer.address,
+                'description': peer.description,
+                'public_key': peer.public_key,
+            })
+
+        yield from {
+            'address': self.address,
+            'allowed_ips': self.allowed_ips,
+            'description': self.description,
+            'dns': self.dns,
+            'endpoint': self.endpoint,
+            'interface': self.interface,
+            'keepalive': self.keepalive,
+            'mtu': self.mtu,
+            'peers': peers,
+            'post_down': self.post_down,
+            'post_up': self.post_up,
+            'pre_down': self.pre_down,
+            'pre_up': self.pre_up,
+            'preshared_key': self.preshared_key,
+            'private_key': self.private_key,
+            'public_key': self.public_key,
+            'table': self.table,
+        }.items()
+
+    def json(self, **kwargs):
+        """
+        Produces the JSON output for this object
+        """
+
+        if 'cls' not in kwargs or not kwargs['cls']:
+            kwargs['cls'] = JSONEncoder
+
+        return json.dumps(self, **kwargs)
 
     @property
     def port(self):

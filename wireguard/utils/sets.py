@@ -73,7 +73,6 @@ class IPAddressSet(ClassedSet):
         return value
 
 
-
 class IPNetworkSet(ClassedSet):
     """
     A set of IPv4Network/IPv6Network objects

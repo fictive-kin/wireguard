@@ -66,6 +66,10 @@ class Server(Peer):
         return (f'<{self.__class__.__name__} iface={self.interface} subnet={self.subnet} '
                 f'address={self.address}>')
 
+    def __iter__(self):
+        yield from {'subnet': self.subnet}.items()
+        yield from super().__iter__()
+
     @property
     def service(self):
         """
