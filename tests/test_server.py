@@ -1,7 +1,11 @@
 
 import pytest
 
-from subnet import ip_network, IPv4Network, IPv4Address
+from subnet import (
+    ip_network,
+    IPv4Network,
+    IPv4Address,
+)
 
 from wireguard import (
     INTERFACE,
@@ -24,10 +28,12 @@ def test_basic_server():
         address=address,
     )
 
-    assert isinstance(server.address, IPv4Address)
-    assert isinstance(server.subnet, IPv4Network)
-    assert str(server.address) == address
-    assert server.address in ip_network(subnet)
+    assert isinstance(server.ipv4, IPv4Address)
+    assert isinstance(server.ipv4_subnet, IPv4Network)
+    assert str(server.ipv4) == address
+    assert server.ipv4 in ip_network(subnet)
+    assert server.ipv6 is None
+    assert server.ipv6_subnet is None
 
     assert server.port == PORT
     assert server.interface == INTERFACE
@@ -79,9 +85,10 @@ def test_server_with_a_peer():
     )
 
     assert isinstance(peer, Peer)
-    assert isinstance(peer.address, IPv4Address)
-    assert peer.address in ip_network(subnet)
-    assert peer.address != server.address
+    assert isinstance(peer.ipv4, IPv4Address)
+    assert peer.ipv4 in ip_network(subnet)
+    assert peer.ipv4 != server.ipv4
+    assert peer.ipv6 is None
 
     assert server.private_key is not None
     assert peer.private_key is not None
@@ -101,14 +108,14 @@ def test_server_with_a_peer():
     server_lines = server_config.local_config.split('\n')
     peer_lines = peer_config.local_config.split('\n')
 
-    assert f'Address = {server.address}/{server.subnet.prefixlen}' in server_lines
-    assert f'Address = {peer.address}/{peer.address.max_prefixlen}' not in server_lines
+    assert f'Address = {server.ipv4}/{server.ipv4_subnet.prefixlen}' in server_lines
+    assert f'Address = {peer.ipv4}/{peer.ipv4.max_prefixlen}' not in server_lines
     assert '[Peer]' in server_lines
     assert '# test-server' not in server_lines  # Should only be present in Peer section on remote
     assert '# test-peer' in server_lines
 
-    assert f'Address = {peer.address}/{peer.address.max_prefixlen}' in peer_lines
-    assert f'Address = {server.address}/{server.subnet.prefixlen}' not in peer_lines
+    assert f'Address = {peer.ipv4}/{peer.ipv4.max_prefixlen}' in peer_lines
+    assert f'Address = {server.ipv4}/{server.ipv4_subnet.prefixlen}' not in peer_lines
     assert '[Peer]' in peer_lines
     assert '# test-peer' not in peer_lines  # Should only be present in Peer section on remote
     assert '# test-server' in peer_lines
@@ -568,6 +575,115 @@ def test_server_invalid_table(table, exception_message):
             subnet,
             address=address,
             table=table,
+        )
+
+    assert exception_message in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    (
+        'ipv4_subnet_with_host_bits',
+        'ipv4_subnet',
+        'ipv4_address',
+        'ipv6_subnet_with_host_bits',
+        'ipv6_subnet',
+        'ipv6_address',
+    ),
+    [
+        ('192.168.0.5/24', '192.168.0.0/24', '192.168.0.5', None, None, None,),
+        (
+            None, None, None,
+           'fde2:3a65:ca93:3125::4523:3425/64',
+           'fde2:3a65:ca93:3125::/64',
+           'fde2:3a65:ca93:3125::4523:3425',
+        ),
+        (
+           '10.12.2.18/16',
+           '10.12.0.0/16',
+           '10.12.2.18',
+           'fd1d:59db:21c2:9842:5678:deed:beef:973/64',
+           'fd1d:59db:21c2:9842::/64',
+           'fd1d:59db:21c2:9842:5678:deed:beef:973',
+        ),
+    ])
+def test_server_subnet_with_host_bits(ipv4_subnet_with_host_bits, ipv4_subnet, ipv4_address,
+                                      ipv6_subnet_with_host_bits, ipv6_subnet, ipv6_address):
+
+    if ipv4_subnet_with_host_bits and ipv6_subnet_with_host_bits:
+        subnet_with_host_bits = [ipv4_subnet_with_host_bits, ipv6_subnet_with_host_bits]
+    elif ipv6_subnet_with_host_bits:
+        subnet_with_host_bits = ipv6_subnet_with_host_bits
+    else:
+        subnet_with_host_bits = ipv4_subnet_with_host_bits
+
+    server = Server(
+        'test-server',
+        subnet_with_host_bits,
+    )
+
+    assert server.ipv4_subnet != server.ipv6_subnet
+
+    if ipv4_subnet_with_host_bits:
+        assert str(server.ipv4_subnet) == ipv4_subnet
+        assert str(server.ipv4) == ipv4_address
+    else:
+        assert server.ipv4_subnet is None
+        assert server.ipv4 is None
+
+    if ipv6_subnet_with_host_bits:
+        assert str(server.ipv6_subnet) == ipv6_subnet
+        assert str(server.ipv6) == ipv6_address
+    else:
+        assert server.ipv6_subnet is None
+        assert server.ipv6 is None
+
+
+@pytest.mark.parametrize(
+    ('subnet', 'address', 'exception_message',),
+    [
+        (False, None, 'that only gives you 1 IP address',),
+        (True, None, 'that only gives you 1 IP address',),
+        (None, None, 'does not appear to be an IPv4 or IPv6 network',),
+        ('beep', None, 'does not appear to be an IPv4 or IPv6 network',),
+        (-1, None, 'does not appear to be an IPv4 or IPv6 network',),
+        ('192.168.1.12/24', '192.168.1.1', 'both an address AND a subnet',),
+        ('192.168.1.12/32', None, 'that only gives you 1 IP address',),
+        ('fde2:3a65:ca93:3125::4523:3425/128', None, 'that only gives you 1 IP address',),
+        (
+           'fde2:3a65:ca93:3125::4523:3425/64',
+           'fde2:3a65:ca93:3125::5234:a423',
+           'both an address AND a subnet',
+        ),
+        (
+            [
+                'fde2:3a65:ca93:3125::4523:3425/64',
+                '10.10.10.10/16',
+                'fd1d:59db:21c2:9842:5678:deed:beef:973/64',
+            ],
+            None,
+            'cannot set more than 2 core subnets',
+        ),
+        (
+            ['10.10.10.10/16', '10.250.250.250/16',],
+            None,
+            'cannot set 2 IPv4 core subnets',
+        ),
+        (
+            [
+                'fde2:3a65:ca93:3125::4523:3425/64',
+                'fd1d:59db:21c2:9842:5678:deed:beef:973/64',
+            ],
+            None,
+            'cannot set 2 IPv6 core subnets',
+        ),
+    ])
+def test_server_invalid_subnet(subnet, address, exception_message):
+
+    with pytest.raises(ValueError) as exc:
+        server = Server(
+            'test-server',
+            subnet,
+            address=address,
         )
 
     assert exception_message in str(exc.value)

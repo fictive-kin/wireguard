@@ -4,6 +4,8 @@ import json
 from subnet import (
     ip_address,
     ip_network,
+    IPv4Address,
+    IPv6Address,
 )
 
 from .utils import (
@@ -46,7 +48,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
     description = None
     _interface = None
-    _address = None
+    _ipv6_address = None
+    _ipv4_address = None
     _port = None
     _private_key = None
     _public_key = None
@@ -100,10 +103,32 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         self.description = description
 
-        if address is None:
-            raise ValueError('Address is required')
+        if not isinstance(address, (list, set, tuple,)):
+            address = [address]
 
-        self.address = address
+        if len(address) > 2:
+            raise ValueError(
+                'You cannot specify more than 2 IPs for this interface: 1 IPv4 + 1 IPv6')
+
+        # pylint: disable=invalid-name
+        for ip in address:
+            if not isinstance(ip, (IPv4Address, IPv6Address,)):
+                ip = ip_address(ip)
+
+            if ip.version == 4:
+                if self.ipv4:
+                    raise ValueError('Cannot set a 2nd IPv4 address.')
+
+                self.ipv4 = ip
+
+            elif ip.version == 6:
+                if self.ipv6:
+                    raise ValueError('Cannot set a 2nd IPv6 address.')
+
+                self.ipv6 = ip
+
+        # pylint: enable=invalid-name
+
         self.endpoint = endpoint
 
         if private_key is None and public_key is None:
@@ -129,12 +154,15 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             self.save_config = save_config
 
         # Always add own address to allowed IPs, to ensure routing at least makes it that far
-        self.allowed_ips.add(ip_network(self.address))
+        for ip in self.address:  # pylint: disable=invalid-name
+            self.allowed_ips.add(ip_network(ip))
+
         if allowed_ips:
             if isinstance(allowed_ips, (list, set, tuple)):
                 self.allowed_ips.extend(allowed_ips)
             else:
                 self.allowed_ips.add(allowed_ips)
+
         if dns:
             if isinstance(dns, (list, set, tuple)):
                 self.dns.extend(dns)
@@ -248,26 +276,71 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         self._interface = value
 
     @property
-    def address(self):
+    def ipv4(self):
         """
-        Returns the IP address for this object
+        Returns the IPv4 address for this object
         """
 
-        if self._address is None:
-            raise AttributeError('Address is not set!')
+        return self._ipv4_address
 
-        return self._address
-
-    @address.setter
-    def address(self, value):
+    @ipv4.setter
+    def ipv4(self, value):
         """
-        Sets the IP address for this connection
+        Sets the IPv4 address for this connection
         """
 
         if value is None:
-            raise ValueError('Address cannot be empty!')
+            self._ipv4_address = None
+            return
 
-        self._address = ip_address(value)
+        if not isinstance(value, IPv4Address):
+            value = ip_address(value)
+
+        if value.version != 4:
+            raise ValueError('Cannot use IPv6 value to set IPv4')
+
+        self._ipv4_address = value
+
+    @property
+    def ipv6(self):
+        """
+        Returns the IPv4 address for this object
+        """
+
+        return self._ipv6_address
+
+    @ipv6.setter
+    def ipv6(self, value):
+        """
+        Sets the IPv6 address for this connection
+        """
+
+        if value is None:
+            self._ipv6_address = None
+            return
+
+        if not isinstance(value, IPv6Address):
+            value = ip_address(value)
+
+        if value.version != 6:
+            raise ValueError('Cannot use IPv4 value to set IPv6')
+
+        self._ipv6_address = value
+
+    @property
+    def address(self):
+        """
+        Returns the address(es) for this peer
+        """
+
+        ips = []
+        if self.ipv4 is not None:
+            ips.append(self.ipv4)
+
+        if self.ipv6 is not None:
+            ips.append(self.ipv6)
+
+        return ips
 
     @property
     def private_key(self):

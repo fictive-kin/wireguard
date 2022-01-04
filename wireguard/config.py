@@ -61,6 +61,9 @@ class Config:  # pylint: disable=too-many-public-methods
         Returns the subnets that the remote peer should route to this peer
         """
 
+        if not self._peer.allowed_ips:
+            return None
+
         return value_list_to_comma('AllowedIPs', self._peer.allowed_ips)
 
     @property
@@ -69,8 +72,7 @@ class Config:  # pylint: disable=too-many-public-methods
         Returns the DNS settings of the given peer for the config file
         """
 
-        # do not write empty DNS = entry
-        if not bool(self._peer.dns):
+        if not self._peer.dns:
             return None
 
         return value_list_to_comma('DNS', self._peer.dns)
@@ -190,7 +192,12 @@ class Config:  # pylint: disable=too-many-public-methods
         """
         Returns the Address for this peer
         """
-        return f'Address = {self._peer.address}/{self._peer.address.max_prefixlen}'
+
+        values = []
+        for ip in self._peer.address:  # pylint: disable=invalid-name
+            values.append(f'{ip}/{ip.max_prefixlen}')
+
+        return value_list_to_comma('Address', values)
 
     @property
     def description(self):
@@ -366,7 +373,15 @@ class ServerConfig(Config):
         """
         Returns the Address for this Server
         """
-        return f'Address = {self._peer.address}/{self._peer.subnet.prefixlen}'
+
+        values = []
+        if self._peer.ipv4:
+            values.append(f'{self._peer.ipv4}/{self._peer.ipv4_subnet.prefixlen}')
+
+        if self._peer.ipv6:
+            values.append(f'{self._peer.ipv6}/{self._peer.ipv6_subnet.prefixlen}')
+
+        return value_list_to_comma('Address', values)
 
     @property
     def peers_filename(self):
