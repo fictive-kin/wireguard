@@ -23,7 +23,7 @@ class JSONEncoder(json.JSONEncoder):
         if isinstance(o, ClassedSet):
             return list(o)
 
-        from wireguard import Peer  # pylint: disable=import-outside-toplevel
+        from ..peer import Peer  # pylint: disable=import-outside-toplevel,cyclic-import
         if isinstance(o, Peer):
             return dict(o)
 
