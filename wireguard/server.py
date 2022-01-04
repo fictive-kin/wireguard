@@ -116,7 +116,17 @@ class Server(Peer):
                 f'ipv6={self.ipv6_subnet} address={self.address}>')
 
     def __iter__(self):
-        yield from {'subnet': self.subnet}.items()
+        """
+        Iterates through this server's useful attributes
+        """
+
+        subnets = []
+        if self.ipv4_subnet:
+            subnets.append(self.ipv4_subnet)
+        if self.ipv6_subnet:
+            subnets.append(self.ipv6_subnet)
+
+        yield from {'subnet': subnets}.items()
         yield from super().__iter__()
 
     @property

@@ -192,7 +192,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
     def __iter__(self):
         """
-        Returns a dict of the peer's attributes
+        Iterates through this peer's attributes
 
         Note: the `peers` attribute is handled specially to prevent circular references
               when using `json.dumps()` of Peer objects. Should you desire to dump more
