@@ -352,25 +352,3 @@ class Server(Peer):
 
         peer.peers.add(self)  # This server needs to be a peer of the new peer
         self.peers.add(peer)  # The peer needs to be attached to this server
-
-    def add_nat_traversal(self, outbound_interface):
-        """
-        Adds appropriate PostUp/PostDown rules when this server is acting as
-        a NAT traversal interface
-        """
-
-        # pylint: disable=line-too-long
-        post_up = [
-            f'iptables -A FORWARD -i %i -o {outbound_interface} -j ACCEPT',
-            f'iptables -A FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT',
-            f'iptables -t nat -A POSTROUTING -o {outbound_interface} -j MASQUERADE',
-        ]
-        post_down = [
-            f'iptables -D FORWARD -i %i -o {outbound_interface} -j ACCEPT',
-            f'iptables -D FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT',
-            f'iptables -t nat -D POSTROUTING -o {outbound_interface} -j MASQUERADE',
-        ]
-        # pylint: enable=line-too-long
-
-        self.post_up.extend(post_up)
-        self.post_down.extend(post_down)

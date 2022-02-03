@@ -155,12 +155,14 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         if save_config is not None:
             self.save_config = save_config
 
-        # Always add own address to allowed IPs, to ensure routing at least makes it that far
+        # Always add own addresses to allowed IPs, to ensure routing at least makes it that far
         for ip in self.address:  # pylint: disable=invalid-name
             self.allowed_ips.add(ip_network(ip))
 
         if allowed_ips:
+            print('here')
             if isinstance(allowed_ips, (list, set, tuple)):
+                print('there')
                 self.allowed_ips.extend(allowed_ips)
             else:
                 self.allowed_ips.add(allowed_ips)
@@ -474,7 +476,6 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         self._table = value
 
-
     def config(self, config_cls=None):
         """
         Return the wireguard config file for this peer
@@ -491,3 +492,25 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         self._config = config_cls(self)
         return self._config
+
+    def add_nat_traversal(self, outbound_interface):
+        """
+        Adds appropriate PostUp/PostDown rules when this peer is acting as
+        a NAT traversal interface
+        """
+
+        # pylint: disable=line-too-long
+        post_up = [
+            f'iptables -A FORWARD -i %i -o {outbound_interface} -j ACCEPT',
+            f'iptables -A FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT',
+            f'iptables -t nat -A POSTROUTING -o {outbound_interface} -j MASQUERADE',
+        ]
+        post_down = [
+            f'iptables -D FORWARD -i %i -o {outbound_interface} -j ACCEPT',
+            f'iptables -D FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT',
+            f'iptables -t nat -D POSTROUTING -o {outbound_interface} -j MASQUERADE',
+        ]
+        # pylint: enable=line-too-long
+
+        self.post_up.extend(post_up)
+        self.post_down.extend(post_down)
