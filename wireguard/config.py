@@ -16,7 +16,7 @@ from .constants import (
 )
 
 
-INTERFACE_KEYS = [
+INTERFACE_KEYS = (
     'address',
     'dns',
     'port',
@@ -28,16 +28,16 @@ INTERFACE_KEYS = [
     'save_config',
     'mtu',
     'table',
-]
+)
 
-PEER_KEYS = [
+PEER_KEYS = (
+    'description',  # We want this to be the first key in the output
     'allowed_ips',
-    'description',
     'endpoint',
     'keepalive',
     'preshared_key',
     'public_key',
-]
+)
 
 
 class Config:  # pylint: disable=too-many-public-methods
