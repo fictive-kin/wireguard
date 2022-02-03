@@ -48,6 +48,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     """
 
     description = None
+    _endpoint = None
     _interface = None
     _ipv6_address = None
     _ipv4_address = None
@@ -56,7 +57,6 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     _public_key = None
     _keepalive = None
     allowed_ips = None
-    endpoint = None
     save_config = None
     dns = None
     pre_up = None
@@ -260,6 +260,30 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         else:
             value = int(value)
         self._port = value
+
+    @property
+    def endpoint(self):
+        """
+        Returns the endpoint value
+        """
+
+        if not isinstance(self._endpoint, str):
+            return None
+
+        # This is the easiest sure way to know if the port is already part of the endpoint
+        # and will work for domain names, IPv4 and IPv6 addresses
+        if self._endpoint.endswith(f':{self.port}'):
+            return self._endpoint
+
+        return f'{self._endpoint}:{self.port}'
+
+    @endpoint.setter
+    def endpoint(self, value):
+        """
+        Sets the endpoint value
+        """
+
+        self._endpoint = value
 
     @property
     def interface(self):
