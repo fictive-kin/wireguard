@@ -310,6 +310,7 @@ class Config:  # pylint: disable=too-many-public-methods
             if value:
                 data.append(value)
 
+        data = ('', *data)
         return os.linesep.join(data)
 
     @property
