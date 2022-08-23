@@ -59,6 +59,7 @@ def server(endpoint,
     click.echo(obj.config())
 
     if write:
+        # pylint: disable=no-member
         if os.path.isfile(obj.config().full_path):
             if not click.prompt(f'{obj.config().full_path} exists! Overwrite? [y/N]'):
                 click.Abort()

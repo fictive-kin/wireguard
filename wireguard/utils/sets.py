@@ -14,7 +14,7 @@ class ClassedSet(set):
     A set that requires members be of a specific class
     """
 
-    def _coerce_value(self, value):  # pylint: disable=no-self-use
+    def _coerce_value(self, value):
         raise NotImplementedError('ClassedSet must be not be used directly. Inherit from it, '
                                   'with appropriate value coersion logic implemented in the '
                                   'child class')
@@ -52,7 +52,7 @@ class IPAddressSet(ClassedSet):
     A set of IPv4Address/IPv6Address objects
     """
 
-    def _coerce_value(self, value):  # pylint: disable=no-self-use
+    def _coerce_value(self, value):
         """
         Coerce given values into an IP Address object
         """
@@ -85,7 +85,7 @@ class IPNetworkSet(ClassedSet):
 
     _ip_network_strict = True
 
-    def _coerce_value(self, value):  # pylint: disable=no-self-use
+    def _coerce_value(self, value):
         """
         Coerce given values into an IP Network object
 
