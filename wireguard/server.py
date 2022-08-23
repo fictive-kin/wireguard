@@ -2,10 +2,7 @@
 from subnet import (
     IPv4Address,
     IPv6Address,
-    IPv4Network,
-    IPv6Network,
     ip_address,
-    ip_network,
 )
 
 from .constants import (
@@ -15,7 +12,7 @@ from .constants import (
 from .config import ServerConfig
 from .peer import Peer
 from .service import Interface
-from .utils import generate_key, public_key
+from .utils import generate_key, public_key, find_ip_and_subnet
 
 
 INHERITABLE_OPTIONS = [
@@ -52,29 +49,19 @@ class Server(Peer):
                              'Use AllowedIPs instead.')
 
         addresses_from_subnets = []
-        for net in subnet:
-            if not isinstance(net, (IPv4Network, IPv6Network)):
-                try:
-                    # If subnet includes host bits, then ip_network will fail, but we can probably
-                    # recover what the user actually wanted to do.
-                    net = ip_network(net)
+        for value in subnet:
+            ip, net = find_ip_and_subnet(value)  # pylint: disable=invalid-name
 
-                except ValueError as exc:
-                    if not isinstance(net, str) or '/' not in net:
-                        raise exc
+            if net is None:
+                raise ValueError(f"'{value}' does not appear to be an IPv4 or IPv6 network")
 
-                    if 'address' in kwargs and kwargs['address'] is not None:
-                        raise ValueError(
-                            'You cannot provide both an address AND a subnet with host bits set!'
-                        ) from exc
+            if ip is not None:
+                if 'address' in kwargs and kwargs['address'] is not None:
+                    raise ValueError(
+                        'You cannot provide both an address AND a subnet with host bits set!'
+                    )
 
-                    # The user is providing a subnet with host bits set, but `ip_address` does not
-                    # allow subnet to be included when parsing the address. Therefore, we chop it
-                    # out, leaving only the desired IP.
-                    addresses_from_subnets.append(ip_address(net.split('/')[0]))
-
-                    # We've got the desired address, now we can set the subnet appropriately.
-                    net = ip_network(net, strict=False)
+                addresses_from_subnets.append(ip)
 
             if net.prefixlen == net.max_prefixlen:
                 raise ValueError('You cannot use an IPv4 `/32` subnet, nor an IPv6 '
@@ -102,6 +89,16 @@ class Server(Peer):
         if 'config_cls' not in kwargs:
             kwargs.update({'config_cls': ServerConfig})
 
+        if 'allowed_ips' not in kwargs or not kwargs['allowed_ips']:
+            kwargs.update({'allowed_ips': []})
+        elif not isinstance(kwargs['allowed_ips'], list):
+            kwargs['allowed_ips'] = list(kwargs['allowed_ips'])
+
+        if self.ipv4_subnet:
+            kwargs['allowed_ips'].append(self.ipv4_subnet)
+        if self.ipv6_subnet:
+            kwargs['allowed_ips'].append(self.ipv6_subnet)
+
         super().__init__(
             description,
             **kwargs
@@ -114,6 +111,20 @@ class Server(Peer):
 
         return (f'<{self.__class__.__name__} iface={self.interface} ipv4={self.ipv4_subnet} '
                 f'ipv6={self.ipv6_subnet} address={self.address}>')
+
+    def __iter__(self):
+        """
+        Iterates through this server's useful attributes
+        """
+
+        subnets = []
+        if self.ipv4_subnet:
+            subnets.append(self.ipv4_subnet)
+        if self.ipv6_subnet:
+            subnets.append(self.ipv6_subnet)
+
+        yield from {'subnet': subnets}.items()
+        yield from super().__iter__()
 
     @property
     def service(self):
