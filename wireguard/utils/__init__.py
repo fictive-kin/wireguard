@@ -11,3 +11,6 @@ from .keys import (
 from .sets import (
     ClassedSet, IPAddressSet, IPNetworkSet
 )
+from .subnets import (
+    find_ip_and_subnet,
+)

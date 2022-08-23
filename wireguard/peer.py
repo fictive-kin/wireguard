@@ -10,6 +10,7 @@ from subnet import (
 
 from .utils import (
     generate_key,
+    find_ip_and_subnet,
     public_key as nacl_public_key,
     ClassedSet,
     IPAddressSet,
@@ -111,9 +112,10 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                 'You cannot specify more than 2 IPs for this interface: 1 IPv4 + 1 IPv6')
 
         # pylint: disable=invalid-name
-        for ip in address:
-            if not isinstance(ip, (IPv4Address, IPv6Address,)):
-                ip = ip_address(ip)
+        for value in address:
+            ip, net = find_ip_and_subnet(value)  # pylint: disable=unused-variable
+            if ip is None:
+                raise ValueError(f"'{value}' does not appear to be an IPv4 or IPv6 address")
 
             if ip.version == 4:
                 if self.ipv4:

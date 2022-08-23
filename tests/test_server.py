@@ -1,5 +1,6 @@
 
 import functools
+import json
 import pytest
 
 from subnet import (
@@ -642,10 +643,10 @@ def test_server_subnet_with_host_bits(ipv4_subnet_with_host_bits, ipv4_subnet, i
 @pytest.mark.parametrize(
     ('subnet', 'address', 'exception_message',),
     [
-        (False, None, 'that only gives you 1 IP address',),
-        (True, None, 'that only gives you 1 IP address',),
+        (False, None, 'does not appear to be an IPv4 or IPv6 network',),
+        (True, None, 'does not appear to be an IPv4 or IPv6 network',),
         (None, None, 'does not appear to be an IPv4 or IPv6 network',),
-        ('beep', None, 'does not appear to be an IPv4 or IPv6 network',),
+        ('beep', None, 'does not appear to be an IPv4 or IPv6 address',),
         (-1, None, 'does not appear to be an IPv4 or IPv6 network',),
         ('192.168.1.12/24', '192.168.1.1', 'both an address AND a subnet',),
         ('192.168.1.12/32', None, 'that only gives you 1 IP address',),
@@ -695,13 +696,111 @@ def test_server_json_dump_ipv4():
     # We're obliged to use `sort_keys=True` here, so that the output will match the
     # pre-built string exactly
 
+
+    calculated_server = json.dumps(
+        {
+            "address": [
+                "192.168.0.5"
+            ],
+            "allowed_ips": [
+                "192.168.0.0/24",
+                "192.168.0.5/32"
+            ],
+            "description": "test-server",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "9ZFnCUpTWG3/rOLWXr1Yx5nHY6TawlthxoVl9WsPWJk=",
+            "public_key": "clrrtKlXuXnbDXN7nM00fMytLHDzaAGChERA1Pmvqns=",
+            "subnet": [
+                "192.168.0.0/24"
+            ],
+            "table": None
+        }, sort_keys=True)
+    calculated_peer = json.dumps(
+        {
+            "address": [
+                "192.168.0.52"
+            ],
+            "allowed_ips": [
+                "192.168.0.52/32"
+            ],
+            "description": "test-peer",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [
+                {
+                    "address": [
+                        "192.168.0.5"
+                    ],
+                    "description": "test-server",
+                    "public_key": "clrrtKlXuXnbDXN7nM00fMytLHDzaAGChERA1Pmvqns="
+                }
+            ],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "aJ7VaCMQNg0qIQ5Xa3xYJQpF9OZaWk/PQRFYtHxyWVE=",
+            "public_key": "ZJMdTDweEMnyoSxa88HWulr3NUtkqhldHHNG/Oup9iM=",
+            "table": None
+        }, sort_keys=True)
+    calculated_server_w_peer = json.dumps(
+        {
+            "address": [
+                "192.168.0.5"
+            ],
+            "allowed_ips": [
+                "192.168.0.0/24",
+                "192.168.0.5/32"
+            ],
+            "description": "test-server",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [
+                {
+                    "address": [
+                        "192.168.0.52"
+                    ],
+                    "description": "test-peer",
+                    "public_key": "ZJMdTDweEMnyoSxa88HWulr3NUtkqhldHHNG/Oup9iM="
+                }
+            ],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "9ZFnCUpTWG3/rOLWXr1Yx5nHY6TawlthxoVl9WsPWJk=",
+            "public_key": "clrrtKlXuXnbDXN7nM00fMytLHDzaAGChERA1Pmvqns=",
+            "subnet": [
+                "192.168.0.0/24"
+            ],
+            "table": None
+        }, sort_keys=True)
+
     server = Server(
         'test-server',
         '192.168.0.5/24',
         private_key='9ZFnCUpTWG3/rOLWXr1Yx5nHY6TawlthxoVl9WsPWJk=',
     )
 
-    assert server.json(sort_keys=True) == '{"address": ["192.168.0.5"], "allowed_ips": ["192.168.0.5/32"], "description": "test-server", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "9ZFnCUpTWG3/rOLWXr1Yx5nHY6TawlthxoVl9WsPWJk=", "public_key": "clrrtKlXuXnbDXN7nM00fMytLHDzaAGChERA1Pmvqns=", "subnet": ["192.168.0.0/24"], "table": null}'
+    assert server.json(sort_keys=True) == calculated_server
 
     peer = server.peer(
         'test-peer',
@@ -709,9 +808,8 @@ def test_server_json_dump_ipv4():
         private_key='aJ7VaCMQNg0qIQ5Xa3xYJQpF9OZaWk/PQRFYtHxyWVE=',
     )
 
-    assert peer.json(sort_keys=True) == '{"address": ["192.168.0.52"], "allowed_ips": ["192.168.0.52/32"], "description": "test-peer", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [{"address": ["192.168.0.5"], "description": "test-server", "public_key": "clrrtKlXuXnbDXN7nM00fMytLHDzaAGChERA1Pmvqns="}], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "aJ7VaCMQNg0qIQ5Xa3xYJQpF9OZaWk/PQRFYtHxyWVE=", "public_key": "ZJMdTDweEMnyoSxa88HWulr3NUtkqhldHHNG/Oup9iM=", "table": null}'
-
-    assert server.json(sort_keys=True) == '{"address": ["192.168.0.5"], "allowed_ips": ["192.168.0.5/32"], "description": "test-server", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [{"address": ["192.168.0.52"], "description": "test-peer", "public_key": "ZJMdTDweEMnyoSxa88HWulr3NUtkqhldHHNG/Oup9iM="}], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "9ZFnCUpTWG3/rOLWXr1Yx5nHY6TawlthxoVl9WsPWJk=", "public_key": "clrrtKlXuXnbDXN7nM00fMytLHDzaAGChERA1Pmvqns=", "subnet": ["192.168.0.0/24"], "table": null}'
+    assert peer.json(sort_keys=True) == calculated_peer
+    assert server.json(sort_keys=True) == calculated_server_w_peer
 
 
 def test_server_json_dump_ipv6():
@@ -719,13 +817,110 @@ def test_server_json_dump_ipv6():
     # We're obliged to use `sort_keys=True` here, so that the output will match the
     # pre-built string exactly
 
+    calculated_server = json.dumps(
+        {
+            "address": [
+                "fde2:3a65:ca93:3125::4523:3425"
+            ],
+            "allowed_ips": [
+                "fde2:3a65:ca93:3125::/64",
+                "fde2:3a65:ca93:3125::4523:3425/128"
+            ],
+            "description": "test-server-2",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "3cH3g4JwUdzg+q2Nqwvr9/WVJujWUa9NHy2PiY1jli4=",
+            "public_key": "hBo5FSeVkb6WvGzpkitOIJYabLc835XbVjt6a7F0eHQ=",
+            "subnet": [
+                "fde2:3a65:ca93:3125::/64"
+            ],
+            "table": None
+        }, sort_keys=True)
+    calculated_peer = json.dumps(
+        {
+            "address": [
+                "fde2:3a65:ca93:3125::3425:4523"
+            ],
+            "allowed_ips": [
+                "fde2:3a65:ca93:3125::3425:4523/128"
+            ],
+            "description": "test-peer-2",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [
+                {
+                    "address": [
+                        "fde2:3a65:ca93:3125::4523:3425"
+                    ],
+                    "description": "test-server-2",
+                    "public_key": "hBo5FSeVkb6WvGzpkitOIJYabLc835XbVjt6a7F0eHQ="
+                }
+            ],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "kKzSxizUuGR28+DIL+w+WDT9OaTeDna6acb2axH19l8=",
+            "public_key": "ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s=",
+            "table": None
+        }, sort_keys=True)
+    calculated_server_w_peer = json.dumps(
+        {
+            "address": [
+                "fde2:3a65:ca93:3125::4523:3425"
+            ],
+            "allowed_ips": [
+                "fde2:3a65:ca93:3125::/64",
+                "fde2:3a65:ca93:3125::4523:3425/128"
+            ],
+            "description": "test-server-2",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [
+                {
+                    "address": [
+                        "fde2:3a65:ca93:3125::3425:4523"
+                    ],
+                    "description": "test-peer-2",
+                    "public_key": "ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s="
+                }
+            ],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "3cH3g4JwUdzg+q2Nqwvr9/WVJujWUa9NHy2PiY1jli4=",
+            "public_key": "hBo5FSeVkb6WvGzpkitOIJYabLc835XbVjt6a7F0eHQ=",
+            "subnet": [
+                "fde2:3a65:ca93:3125::/64"
+            ],
+            "table": None
+        }, sort_keys=True)
+
     server = Server(
         'test-server-2',
         'fde2:3a65:ca93:3125::4523:3425/64',
         private_key='3cH3g4JwUdzg+q2Nqwvr9/WVJujWUa9NHy2PiY1jli4=',
     )
 
-    assert server.json(sort_keys=True) == '{"address": ["fde2:3a65:ca93:3125::4523:3425"], "allowed_ips": ["fde2:3a65:ca93:3125::4523:3425/128"], "description": "test-server-2", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "3cH3g4JwUdzg+q2Nqwvr9/WVJujWUa9NHy2PiY1jli4=", "public_key": "hBo5FSeVkb6WvGzpkitOIJYabLc835XbVjt6a7F0eHQ=", "subnet": ["fde2:3a65:ca93:3125::/64"], "table": null}'
+    assert server.json(sort_keys=True) == calculated_server
 
     peer = server.peer(
         'test-peer-2',
@@ -733,15 +928,123 @@ def test_server_json_dump_ipv6():
         private_key='kKzSxizUuGR28+DIL+w+WDT9OaTeDna6acb2axH19l8=',
     )
 
-    assert peer.json(sort_keys=True) == '{"address": ["fde2:3a65:ca93:3125::3425:4523"], "allowed_ips": ["fde2:3a65:ca93:3125::3425:4523/128"], "description": "test-peer-2", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [{"address": ["fde2:3a65:ca93:3125::4523:3425"], "description": "test-server-2", "public_key": "hBo5FSeVkb6WvGzpkitOIJYabLc835XbVjt6a7F0eHQ="}], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "kKzSxizUuGR28+DIL+w+WDT9OaTeDna6acb2axH19l8=", "public_key": "ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s=", "table": null}'
-
-    assert server.json(sort_keys=True) == '{"address": ["fde2:3a65:ca93:3125::4523:3425"], "allowed_ips": ["fde2:3a65:ca93:3125::4523:3425/128"], "description": "test-server-2", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [{"address": ["fde2:3a65:ca93:3125::3425:4523"], "description": "test-peer-2", "public_key": "ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s="}], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "3cH3g4JwUdzg+q2Nqwvr9/WVJujWUa9NHy2PiY1jli4=", "public_key": "hBo5FSeVkb6WvGzpkitOIJYabLc835XbVjt6a7F0eHQ=", "subnet": ["fde2:3a65:ca93:3125::/64"], "table": null}'
+    assert peer.json(sort_keys=True) == calculated_peer
+    assert server.json(sort_keys=True) == calculated_server_w_peer
 
 
 def test_server_json_dump_dual_ips():
 
     # We're obliged to use `sort_keys=True` here, so that the output will match the
     # pre-built string exactly
+
+    calculated_server = json.dumps(
+        {
+            "address": [
+                "192.168.0.5",
+                "fde2:3a65:ca93:3125::4523:3425"
+            ],
+            "allowed_ips": [
+                "fde2:3a65:ca93:3125::4523:3425/128",
+                "192.168.0.0/24",
+                "192.168.0.5/32",
+                "fde2:3a65:ca93:3125::/64"
+            ],
+            "description": "test-server-3",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s=",
+            "public_key": "yw/9moFVd/UnkUZKWMwKbmx4uGFkt33HUxcL5fC5Nl0=",
+            "subnet": [
+                "192.168.0.0/24",
+                "fde2:3a65:ca93:3125::/64"
+            ],
+            "table": None
+        }, sort_keys=True)
+    calculated_peer = json.dumps(
+        {
+            "address": [
+                "192.168.0.52",
+                "fde2:3a65:ca93:3125::3425:4523"
+            ],
+            "allowed_ips": [
+                "192.168.0.52/32",
+                "fde2:3a65:ca93:3125::3425:4523/128"
+            ],
+            "description": "test-peer-3",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [
+                {
+                    "address": [
+                        "192.168.0.5",
+                        "fde2:3a65:ca93:3125::4523:3425"
+                    ],
+                    "description": "test-server-3",
+                    "public_key": "yw/9moFVd/UnkUZKWMwKbmx4uGFkt33HUxcL5fC5Nl0="
+                }
+            ],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "0LUF7V6tpmH93dNDRRiBchAAFzfkiyFUNvpOyNwQdWc=",
+            "public_key": "1loZYE8cKaENRmjUJI8f2suVq/MpPXfRIgRfJakdyUA=",
+            "table": None
+        }, sort_keys=True)
+    calculated_server_w_peer = json.dumps(
+        {
+            "address": [
+                "192.168.0.5",
+                "fde2:3a65:ca93:3125::4523:3425"
+            ],
+            "allowed_ips": [
+                "fde2:3a65:ca93:3125::4523:3425/128",
+                "192.168.0.0/24",
+                "192.168.0.5/32",
+                "fde2:3a65:ca93:3125::/64"
+            ],
+            "description": "test-server-3",
+            "dns": [],
+            "endpoint": None,
+            "interface": "wg0",
+            "keepalive": None,
+            "mtu": None,
+            "peers": [
+                {
+                    "address": [
+                        "192.168.0.52",
+                        "fde2:3a65:ca93:3125::3425:4523"
+                    ],
+                    "description": "test-peer-3",
+                    "public_key": "1loZYE8cKaENRmjUJI8f2suVq/MpPXfRIgRfJakdyUA="
+                }
+            ],
+            "post_down": [],
+            "post_up": [],
+            "pre_down": [],
+            "pre_up": [],
+            "preshared_key": None,
+            "private_key": "ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s=",
+            "public_key": "yw/9moFVd/UnkUZKWMwKbmx4uGFkt33HUxcL5fC5Nl0=",
+            "subnet": [
+                "192.168.0.0/24",
+                "fde2:3a65:ca93:3125::/64"
+            ],
+            "table": None
+        }, sort_keys=True)
 
     server = Server(
         'test-server-3',
@@ -750,7 +1053,7 @@ def test_server_json_dump_dual_ips():
         private_key='ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s=',
     )
 
-    assert server.json(sort_keys=True) == '{"address": ["192.168.0.5", "fde2:3a65:ca93:3125::4523:3425"], "allowed_ips": ["fde2:3a65:ca93:3125::4523:3425/128", "192.168.0.5/32"], "description": "test-server-3", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s=", "public_key": "yw/9moFVd/UnkUZKWMwKbmx4uGFkt33HUxcL5fC5Nl0=", "subnet": ["192.168.0.0/24", "fde2:3a65:ca93:3125::/64"], "table": null}'
+    assert server.json(sort_keys=True) == calculated_server
 
     peer = server.peer(
         'test-peer-3',
@@ -758,6 +1061,5 @@ def test_server_json_dump_dual_ips():
         private_key='0LUF7V6tpmH93dNDRRiBchAAFzfkiyFUNvpOyNwQdWc=',
     )
 
-    assert peer.json(sort_keys=True) == '{"address": ["192.168.0.52", "fde2:3a65:ca93:3125::3425:4523"], "allowed_ips": ["192.168.0.52/32", "fde2:3a65:ca93:3125::3425:4523/128"], "description": "test-peer-3", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [{"address": ["192.168.0.5", "fde2:3a65:ca93:3125::4523:3425"], "description": "test-server-3", "public_key": "yw/9moFVd/UnkUZKWMwKbmx4uGFkt33HUxcL5fC5Nl0="}], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "0LUF7V6tpmH93dNDRRiBchAAFzfkiyFUNvpOyNwQdWc=", "public_key": "1loZYE8cKaENRmjUJI8f2suVq/MpPXfRIgRfJakdyUA=", "table": null}'
-
-    assert server.json(sort_keys=True) == '{"address": ["192.168.0.5", "fde2:3a65:ca93:3125::4523:3425"], "allowed_ips": ["fde2:3a65:ca93:3125::4523:3425/128", "192.168.0.5/32"], "description": "test-server-3", "dns": [], "endpoint": null, "interface": "wg0", "keepalive": null, "mtu": null, "peers": [{"address": ["192.168.0.52", "fde2:3a65:ca93:3125::3425:4523"], "description": "test-peer-3", "public_key": "1loZYE8cKaENRmjUJI8f2suVq/MpPXfRIgRfJakdyUA="}], "post_down": [], "post_up": [], "pre_down": [], "pre_up": [], "preshared_key": null, "private_key": "ShmphOZy2kccMQdPOw+s0PbM3O5QkNIcxXMa60KA31s=", "public_key": "yw/9moFVd/UnkUZKWMwKbmx4uGFkt33HUxcL5fC5Nl0=", "subnet": ["192.168.0.0/24", "fde2:3a65:ca93:3125::/64"], "table": null}'
+    assert peer.json(sort_keys=True) == calculated_peer
+    assert server.json(sort_keys=True) == calculated_server_w_peer
