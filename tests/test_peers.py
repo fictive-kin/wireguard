@@ -3,9 +3,8 @@ import pytest
 
 from subnet import (
     ip_address,
-    ip_network,
-    IPv4Network,
     IPv4Address,
+    IPv6Address,
 )
 
 from wireguard import (
@@ -19,16 +18,38 @@ from wireguard import (
 from wireguard.utils import public_key
 
 
-def test_basic_peer():
-    address = '192.168.0.2'
+@pytest.mark.parametrize(
+    ('ipv4_address', 'ipv6_address',),
+    [
+        ('192.168.0.2', None,),
+        (None, 'fde2:3a65:ca93:3125:1234:abcd:4321:32',),
+        ('192.168.0.2', 'fde2:3a65:ca93:3125:1234:abcd:4321:32',),
+    ])
+def test_basic_peer(ipv4_address, ipv6_address):
+
+    if ipv4_address and ipv6_address:
+        address = [ipv4_address, ipv6_address]
+    elif ipv6_address:
+        address = ipv6_address
+    else:
+        address = ipv4_address
 
     peer = Peer(
         'test-peer',
         address=address,
     )
 
-    assert isinstance(peer.address, IPv4Address)
-    assert str(peer.address) == address
+    if ipv4_address:
+        assert isinstance(peer.ipv4, IPv4Address)
+        assert str(peer.ipv4) == ipv4_address
+    else:
+        assert peer.ipv4 is None
+
+    if ipv6_address:
+        assert isinstance(peer.ipv6, IPv6Address)
+        assert str(peer.ipv6) == ipv6_address
+    else:
+        assert peer.ipv6 is None
 
     assert peer.port == PORT
     assert peer.interface == INTERFACE
@@ -58,7 +79,16 @@ def test_basic_peer():
         if line:
             assert line == '[Interface]'
             break
-    assert f'Address = {address}/32' in config_lines
+
+    if ipv4_address and ipv6_address:
+        assert (
+            f'Address = {ipv4_address}/32,{ipv6_address}/128' in config_lines or
+            f'Address = {ipv6_address}/128,{ipv4_address}/32' in config_lines
+        )
+    elif ipv6_address:
+        assert f'Address = {ipv6_address}/128' in config_lines
+    else:
+        assert f'Address = {ipv4_address}/32' in config_lines
 
     assert '# test-peer' not in config_lines  # Should only be present in Peer section on remote
     assert '[Peer]' not in config_lines  # We haven't configured any peers, so this shouldn't exist
@@ -85,8 +115,9 @@ def test_peer_mtu(mtu):
         mtu=mtu,
     )
 
-    assert isinstance(peer.address, IPv4Address)
-    assert str(peer.address) == address
+    assert isinstance(peer.ipv4, IPv4Address)
+    assert str(peer.ipv4) == address
+    assert peer.ipv6 is None
 
     assert peer.port == PORT
     assert peer.interface == INTERFACE
@@ -148,8 +179,9 @@ def test_peer_dns():
         dns=ip_address(dns),
     )
 
-    assert isinstance(peer.address, IPv4Address)
-    assert str(peer.address) == address
+    assert isinstance(peer.ipv4, IPv4Address)
+    assert str(peer.ipv4) == address
+    assert peer.ipv6 is None
 
     assert peer.port == PORT
     assert peer.interface == INTERFACE

@@ -35,21 +35,70 @@ class Server(Peer):
     While not required to have a server<->client setup, this class simplifies doing so
     """
 
-    subnet = None
+    ipv4_subnet = None
+    ipv6_subnet = None
 
     def __init__(self,
                  description,
                  subnet,
                  **kwargs
-            ):
+            ):  # pylint: disable=too-many-branches
 
-        if not isinstance(subnet, (IPv4Network, IPv6Network)):
-            subnet = ip_network(subnet)
+        if not isinstance(subnet, (list, set, tuple,)):
+            subnet = [subnet]
 
-        self.subnet = subnet
+        if len(subnet) > 2:
+            raise ValueError('You cannot set more than 2 core subnets: 1 IPv4 + 1 IPv6. '
+                             'Use AllowedIPs instead.')
+
+        addresses_from_subnets = []
+        for net in subnet:
+            if not isinstance(net, (IPv4Network, IPv6Network)):
+                try:
+                    # If subnet includes host bits, then ip_network will fail, but we can probably
+                    # recover what the user actually wanted to do.
+                    net = ip_network(net)
+
+                except ValueError as exc:
+                    if not isinstance(net, str) or '/' not in net:
+                        raise exc
+
+                    if 'address' in kwargs and kwargs['address'] is not None:
+                        raise ValueError(
+                            'You cannot provide both an address AND a subnet with host bits set!'
+                        ) from exc
+
+                    # The user is providing a subnet with host bits set, but `ip_address` does not
+                    # allow subnet to be included when parsing the address. Therefore, we chop it
+                    # out, leaving only the desired IP.
+                    addresses_from_subnets.append(ip_address(net.split('/')[0]))
+
+                    # We've got the desired address, now we can set the subnet appropriately.
+                    net = ip_network(net, strict=False)
+
+            if net.prefixlen == net.max_prefixlen:
+                raise ValueError('You cannot use an IPv4 `/32` subnet, nor an IPv6 '
+                                 '`/128` subnet as that only gives you 1 IP address '
+                                 'to use, and therefore you cannot have any peers!')
+
+            if net.version == 4:
+                if self.ipv4_subnet:
+                    raise ValueError('You cannot set 2 IPv4 core subnets.')
+
+                self.ipv4_subnet = net
+
+            elif net.version == 6:
+                if self.ipv6_subnet:
+                    raise ValueError('You cannot set 2 IPv6 core subnets.')
+
+                self.ipv6_subnet = net
 
         if 'address' not in kwargs:
-            kwargs.update({'address': subnet.random_ip()})
+            if addresses_from_subnets:
+                kwargs.update({'address': addresses_from_subnets})
+            else:
+                kwargs.update({'address': self.unique_address()})
+
         if 'config_cls' not in kwargs:
             kwargs.update({'config_cls': ServerConfig})
 
@@ -63,8 +112,8 @@ class Server(Peer):
         A simplistic representation of this object
         """
 
-        return (f'<{self.__class__.__name__} iface={self.interface} subnet={self.subnet} '
-                f'address={self.address}>')
+        return (f'<{self.__class__.__name__} iface={self.interface} ipv4={self.ipv4_subnet} '
+                f'ipv6={self.ipv6_subnet} address={self.address}>')
 
     @property
     def service(self):
@@ -83,28 +132,51 @@ class Server(Peer):
 
         return item in self.peers_pubkeys
 
-    def address_exists(self, item):
+    def address_exists_ipv4(self, item):
         """
-        Checks an IP address against the addresses already used by this server and it's peers
+        Checks an IPv4 address against the addresses already used by this server and it's peers
         """
 
-        if not isinstance(item, (IPv4Address, IPv6Address)):
+        if not isinstance(item, IPv4Address):
             item = ip_address(item)
 
-        if item == self.address:
+        if item == self.ipv4:
             return True
 
-        return item in self.peers_addresses
+        return item in self.peers_addresses_ipv4
+
+    def address_exists_ipv6(self, item):
+        """
+        Checks an IPv6 address against the addresses already used by this server and it's peers
+        """
+
+        if not isinstance(item, IPv6Address):
+            item = ip_address(item)
+
+        if item == self.ipv6:
+            return True
+
+        return item in self.peers_addresses_ipv6
 
     @property
-    def peers_addresses(self):
+    def peers_addresses_ipv4(self):
         """
-        Returns all the IP addresses for the peers attached to this server
+        Returns all the IPv4 addresses for the peers attached to this server
         """
 
         if not self.peers:
             return []
-        return [peer.address for peer in self.peers]
+        return [peer.ipv4 for peer in self.peers]
+
+    @property
+    def peers_addresses_ipv6(self):
+        """
+        Returns all the IPv6 addresses for the peers attached to this server
+        """
+
+        if not self.peers:
+            return []
+        return [peer.ipv6 for peer in self.peers]
 
     @property
     def peers_pubkeys(self):
@@ -118,20 +190,55 @@ class Server(Peer):
 
     def unique_address(self, max_address_retries=None):
         """
-        Return an unused address from this server's subnet
+        Return unused addresses from this server's subnets (1 IPv4 + 1 IPv6, if applicable)
+        """
+
+        addresses = []
+
+        if self.ipv4_subnet:
+            addresses.append(self.unique_address_ipv4(max_address_retries))
+
+        if self.ipv6_subnet:
+            addresses.append(self.unique_address_ipv6(max_address_retries))
+
+        return addresses
+
+    def unique_address_ipv4(self, max_address_retries=None):
+        """
+        Return an unused address from this server's IPv4 subnet
         """
 
         if max_address_retries in [None, True]:
             max_address_retries = MAX_ADDRESS_RETRIES
 
-        address = self.subnet.random_ip()
+        address = self.ipv4_subnet.random_ip()
         tries = 0
 
-        while self.address_exists(address):
+        while self.address_exists_ipv4(address):
             if tries >= max_address_retries:
-                raise ValueError('Too many retries to obtain an unused IP address')
+                raise ValueError('Too many retries to obtain an unused IPv4 address')
 
-            address = self.subnet.random_ip()
+            address = self.ipv4_subnet.random_ip()
+            tries += 1
+
+        return address
+
+    def unique_address_ipv6(self, max_address_retries=None):
+        """
+        Return an unused address from this server's IPv6 subnet
+        """
+
+        if max_address_retries in [None, True]:
+            max_address_retries = MAX_ADDRESS_RETRIES
+
+        address = self.ipv6_subnet.random_ip()
+        tries = 0
+
+        while self.address_exists_ipv6(address):
+            if tries >= max_address_retries:
+                raise ValueError('Too many retries to obtain an unused IPv6 address')
+
+            address = self.ipv6_subnet.random_ip()
             tries += 1
 
         return address
@@ -200,14 +307,27 @@ class Server(Peer):
         and optionally updating the peer's data to obtain uniqueness
         """
 
-        if self.address_exists(peer.address):
-            try:
-                if max_address_retries in [False, 0]:
-                    raise ValueError('Not allowed to change the peer IP address due to'
-                                     ' max_address_retries=False (or 0)')
-                peer.address = self.unique_address(max_address_retries)
-            except ValueError as exc:
-                raise ValueError('Could not add peer to this server. It is not unique.') from exc
+        if self.ipv4_subnet and peer.ipv4:
+            if self.address_exists_ipv4(peer.ipv4):
+                try:
+                    if max_address_retries in [False, 0]:
+                        raise ValueError('Not allowed to change the peer IP address due to'
+                                         ' max_address_retries=False (or 0)')
+                    peer.ipv4 = self.unique_address_ipv4(max_address_retries)
+                except ValueError as exc:
+                    raise ValueError(
+                        'Could not add peer to this server. It is not unique.') from exc
+
+        if self.ipv6_subnet and peer.ipv6:
+            if self.address_exists_ipv6(peer.ipv6):
+                try:
+                    if max_address_retries in [False, 0]:
+                        raise ValueError('Not allowed to change the peer IP address due to'
+                                         ' max_address_retries=False (or 0)')
+                    peer.ipv6 = self.unique_address_ipv6(max_address_retries)
+                except ValueError as exc:
+                    raise ValueError(
+                        'Could not add peer to this server. It is not unique.') from exc
 
         if self.pubkey_exists(peer.public_key):
             try:
@@ -216,7 +336,8 @@ class Server(Peer):
                                      ' max_privkey_retries=False (or 0)')
                 peer.private_key = self.unique_privkey(max_privkey_retries)
             except ValueError as exc:
-                raise ValueError('Could not add peer to this server. It is not unique.') from exc
+                raise ValueError(
+                        'Could not add peer to this server. It is not unique.') from exc
 
         peer.peers.add(self)  # This server needs to be a peer of the new peer
         self.peers.add(peer)  # The peer needs to be attached to this server
