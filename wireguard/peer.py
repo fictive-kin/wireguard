@@ -160,9 +160,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             self.allowed_ips.add(ip_network(ip))
 
         if allowed_ips:
-            print('here')
             if isinstance(allowed_ips, (list, set, tuple)):
-                print('there')
                 self.allowed_ips.extend(allowed_ips)
             else:
                 self.allowed_ips.add(allowed_ips)

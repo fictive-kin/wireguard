@@ -235,7 +235,9 @@ class Interface:
                     'persistent_keepalive': peerstat[7] if peerstat[7] != 'off' else False,
                 }
             except IndexError:
+                print('Failed to parse:')
                 print(line)
+                continue
 
             peer.load(data)
             peers.update({peer.peer: peer})
