@@ -12,7 +12,7 @@ def value_list_to_comma(ini_key, values):
     return f'{ini_key} = {values}'
 
 
-def value_list_to_multiple(ini_key, values):
+def value_list_to_multiple(ini_key, values, key_value_separator=' = '):
     """
     Returns multiple config lines for a given list of values
     """
@@ -22,6 +22,6 @@ def value_list_to_multiple(ini_key, values):
 
     data = []
     for value in values:
-        data.append(f'{ini_key} = {value}')
+        data.append(f'{ini_key}{key_value_separator}{value}')
 
     return os.linesep.join(data)

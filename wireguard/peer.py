@@ -48,6 +48,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     """
 
     description = None
+    _comments = None
     _endpoint = None
     _interface = None
     _ipv6_address = None
@@ -73,6 +74,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  description,
                  *,
+                 comments=None,
                  address=None,
                  endpoint=None,
                  port=None,
@@ -103,6 +105,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         self.post_down = []
 
         self.description = description
+        self.comments = comments
 
         if not isinstance(address, (list, set, tuple,)):
             address = [address]
@@ -238,6 +241,38 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             kwargs['cls'] = JSONEncoder
 
         return json.dumps(self, **kwargs)
+
+    @property
+    def comments(self):
+        """
+        Returns the comments list
+        """
+
+        return self._comments
+
+    @comments.setter
+    def comments(self, value):
+        """
+        Sets the comments list
+        """
+
+        if not isinstance(value, (list, set, tuple,)):
+            value = [value]
+
+        if self._comments is None:
+            self._comments = []
+
+        self._comments.extend(value)
+
+    def add_comment(self, value):
+        """
+        Adds a new comment(s) to the comments list
+        """
+
+        if not isinstance(value, (list, set, tuple,)):
+            self.comments.append(value)
+        else:
+            self.comments.extend(value)
 
     @property
     def port(self):

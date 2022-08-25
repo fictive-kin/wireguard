@@ -269,3 +269,26 @@ def test_table():
 
     peer.table = None
     assert config.table is None
+
+
+def test_comments():
+    address = '192.168.0.2'
+
+    comments = [
+        'This is the first comment',
+        'and this is another',
+    ]
+
+    peer = Peer(
+        'test-peer',
+        address=address,
+        comments=comments,
+    )
+
+    config = peer.config()
+
+    for comment in comments:
+        assert f'# {comment}' in config.local_config
+
+    peer.add_comment('maybe we need a third')
+    assert '# maybe we need a third' in config.local_config

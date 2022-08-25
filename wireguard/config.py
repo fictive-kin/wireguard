@@ -28,6 +28,7 @@ INTERFACE_KEYS = (
     'save_config',
     'mtu',
     'table',
+    'comments',  # We want this to be the last line/chunk in the output
 )
 
 PEER_KEYS = (
@@ -37,6 +38,7 @@ PEER_KEYS = (
     'keepalive',
     'preshared_key',
     'public_key',
+    'comments',  # We want this to be the last line/chunk in the output
 )
 
 
@@ -209,6 +211,17 @@ class Config:  # pylint: disable=too-many-public-methods
             return None
 
         return f'# {self._peer.description}'
+
+    @property
+    def comments(self):
+        """
+        Returns any comments that should be present in the generated file
+        """
+
+        if self._peer.comments is None:
+            return None
+
+        return value_list_to_multiple('#', self._peer.comments, key_value_separator=' ')
 
     @property
     def mtu(self):

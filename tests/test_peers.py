@@ -238,3 +238,23 @@ def test_peer_invalid_dns(dns, exception_message):
         )
 
     assert exception_message in str(exc.value)
+
+
+def test_peer_comments():
+    address = '192.168.0.2'
+    dns = '1.1.1.1'
+    comments = [
+       'This is the first comment',
+       'and this is another',
+    ]
+
+    peer = Peer(
+        'test-peer',
+        address=address,
+        dns=ip_address(dns),
+        comments=comments,
+    )
+
+    assert len(peer.comments) == 2
+    for comment in comments:
+        assert comment in peer.comments
