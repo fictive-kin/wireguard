@@ -42,7 +42,7 @@ class PeerSet(ClassedSet):
             try:
                 return Peer(**value)
             except ValueError as exc:
-                pass
+                raise ValueError('Provided value must be an instance of Peer') from exc
 
         raise ValueError('Provided value must be an instance of Peer')
 
