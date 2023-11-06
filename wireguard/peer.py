@@ -47,12 +47,20 @@ class PeerSet(ClassedSet):
         raise ValueError('Provided value must be an instance of Peer')
 
     def discard_by_description(self, description):
+        """
+        Discard a peer by description
+        """
+
         try:
             self.remove_by_description(description)
         except KeyError:
             pass
 
     def remove_by_description(self, description):
+        """
+        Remove a peer by description
+        """
+
         for peer in self:
             if peer.description == description:
                 self.remove(peer)
@@ -61,27 +69,43 @@ class PeerSet(ClassedSet):
         raise KeyError(description)
 
     def discard_by_ip(self, ip):
+        """
+        Discard a peer by ip
+        """
+
         try:
             self.remove_by_ip(ip)
         except KeyError:
             pass
 
     def remove_by_ip(self, ip):
+        """
+        Remove a peer by ip
+        """
+
         chk_ip = ip_address(ip)
         for peer in self:
-            if peer.ipv6 == chk_ip or peer.ipv4 == chk_ip:
+            if chk_ip in [peer.ipv6, peer.ipv4]:
                 self.remove(peer)
                 return
 
         raise KeyError(ip)
 
     def discard_by_private_key(self, key):
+        """
+        Discard a peer by private key
+        """
+
         try:
             self.remove_by_private_key(key)
         except KeyError:
             pass
 
     def remove_by_private_key(self, key):
+        """
+        Remove a peer by private key
+        """
+
         for peer in self:
             if peer.private_key and peer.private_key == key:
                 self.remove(peer)
@@ -90,12 +114,20 @@ class PeerSet(ClassedSet):
         raise KeyError(key)
 
     def discard_by_public_key(self, key):
+        """
+        Discard a peer by public key
+        """
+
         try:
             self.remove_by_public_key(key)
         except KeyError:
             pass
 
     def remove_by_public_key(self, key):
+        """
+        Remove a peer by public key
+        """
+
         for peer in self:
             if peer.public_key == key:
                 self.remove(peer)
@@ -322,6 +354,21 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             kwargs['cls'] = JSONEncoder
 
         return json.dumps(self, **kwargs)
+
+    def remove_peer(self, peer, *, bidirectional=True):
+        """
+        Removes the given peer from this peer
+
+        Default behaviour removes this peer from the given peer as well. Passing
+        `bidirectional=False` will only perform the removal on this peer, leaving
+        the given peer unchanged.
+        """
+
+        # Since we don't care if the peer is already gone, we are using `.discard()`
+        # instead of `.remove()` here.
+        self.peers.discard(peer)
+        if bidirectional:
+            peer.peers.discard(self)
 
     @property
     def comments(self):
