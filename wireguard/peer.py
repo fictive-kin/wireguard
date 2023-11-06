@@ -32,12 +32,19 @@ class PeerSet(ClassedSet):
 
     def _coerce_value(self, value):
         """
-        Bomb if a Peer object is not provided
+        Bomb if a Peer object is not provided or cannot be coerced from a dict
         """
 
-        if not isinstance(value, Peer):
-            raise ValueError('Provided value must be an instance of Peer')
-        return value
+        if isinstance(value, Peer):
+            return value
+
+        if isinstance(value, dict):
+            try:
+                return Peer(**value)
+            except ValueError as exc:
+                raise ValueError('Provided value must be an instance of Peer') from exc
+
+        raise ValueError('Provided value must be an instance of Peer')
 
 
 class Peer:  # pylint: disable=too-many-instance-attributes
@@ -173,14 +180,31 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                 self.dns.extend(dns)
             else:
                 self.dns.add(dns)
+
         if pre_up:
-            self.pre_up.append(pre_up)
+            if isinstance(pre_up, (list, set, tuple)):
+                self.pre_up.extend(pre_up)
+            else:
+                self.pre_up.append(pre_up)
+
         if post_up:
-            self.post_up.append(post_up)
+            if isinstance(post_up, (list, set, tuple)):
+                self.post_up.extend(post_up)
+            else:
+                self.post_up.append(post_up)
+
         if pre_down:
-            self.pre_down.append(pre_down)
+            if isinstance(pre_down, (list, set, tuple)):
+                self.pre_down.extend(pre_down)
+            else:
+                self.pre_down.append(pre_down)
+
         if post_down:
-            self.post_down.append(post_down)
+            if isinstance(post_down, (list, set, tuple)):
+                self.post_down.extend(post_down)
+            else:
+                self.post_down.append(post_down)
+
         if peers:
             if isinstance(peers, (list, set, tuple)):
                 self.peers.extend(peers)
