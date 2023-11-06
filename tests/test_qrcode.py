@@ -29,7 +29,7 @@ def test_peer_qrcode():
         address=address,
     )
 
-    assert peer.config().qrcode
+    assert peer.config.qrcode
 
 
 def test_peer_qrcode_not_present():
@@ -49,6 +49,6 @@ def test_peer_qrcode_not_present():
 
     # If qrcode is not present in the venv, test it fails appropriately.
     with pytest.raises(AttributeError) as exc:
-        peer.config().qrcode
+        peer.config.qrcode
 
     assert 'add the qrcode' in str(exc.value)

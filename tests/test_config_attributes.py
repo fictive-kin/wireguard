@@ -285,7 +285,7 @@ def test_comments():
         comments=comments,
     )
 
-    config = peer.config()
+    config = peer.config
 
     for comment in comments:
         assert f'# {comment}' in config.local_config

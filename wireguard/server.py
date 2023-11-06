@@ -11,7 +11,6 @@ from .constants import (
 )
 from .config import ServerConfig
 from .peer import Peer
-from .service import Interface
 from .utils import generate_key, public_key, find_ip_and_subnet
 
 
@@ -125,13 +124,6 @@ class Server(Peer):
 
         yield from {'subnet': subnets}.items()
         yield from super().__iter__()
-
-    @property
-    def service(self):
-        """
-        Returns the service interface for this server
-        """
-        return Interface(self.interface)
 
     def pubkey_exists(self, item):
         """

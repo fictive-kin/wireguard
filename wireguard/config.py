@@ -271,22 +271,21 @@ class Config:  # pylint: disable=too-many-public-methods
 
         peers_data = ''
         for peer in self._peer.peers:
-            peer_config = peer.config()
-            peers_data += peer_config.remote_config
+            peers_data += peer.config.remote_config
 
             extras = []
 
             # Need to take special measures when the preshared keys aren't identical
             # And there is no need for an `else` clause, as the value would already have
             # been included by the `remote_config` returned data for normal cases
-            if self.preshared_key != peer_config.preshared_key:
+            if self.preshared_key != peer.config.preshared_key:
 
                 # When only the remote peer has a key set, we need to use it too
                 if self.preshared_key is None:
-                    extras.append(peer_config.preshared_key)
+                    extras.append(peer.config.preshared_key)
 
                 # When only this peer has a key set, the remote peer needs to use it too
-                elif peer_config.preshared_key is None:
+                elif peer.config.preshared_key is None:
                     extras.append(self.preshared_key)
 
                 # The keys have both been set, but are not a match.

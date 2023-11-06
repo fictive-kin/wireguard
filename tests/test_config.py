@@ -112,7 +112,7 @@ def test_write_server_config_no_params():
     )
 
     with patch('builtins.open', mock_open()) as mo:
-        server.config().write()
+        server.config.write()
 
         mo.assert_has_calls([
             call('/etc/wireguard/wg0.conf', mode='w', encoding='utf-8'),
@@ -139,7 +139,7 @@ def test_write_server_config(interface, path, full_path, peers_full_path):
         interface=interface
     )
 
-    config = server.config()
+    config = server.config
     assert config.full_path(path) == full_path
     assert config.peers_full_path(path) == peers_full_path
 
@@ -162,7 +162,7 @@ def test_write_peer_config_no_params():
     )
 
     with patch('builtins.open', mock_open()) as mo:
-        peer.config().write()
+        peer.config.write()
 
         mo.assert_has_calls([
             call('/etc/wireguard/wg0.conf', mode='w', encoding='utf-8'),
@@ -191,7 +191,7 @@ def test_write_peer_config(interface, path, full_path):
     assert config.full_path(path) == full_path
 
     with patch('builtins.open', mock_open()) as mo:
-        peer.config().write(path)
+        peer.config.write(path)
 
         mo.assert_has_calls([
             call(full_path, mode='w', encoding='utf-8'),

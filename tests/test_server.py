@@ -54,7 +54,7 @@ def test_basic_server():
     assert not server.preshared_key
     assert not server.keepalive
 
-    config = server.config()
+    config = server.config
     assert isinstance(config, ServerConfig)
 
     config_lines = config.local_config.split('\n')
@@ -101,8 +101,8 @@ def test_server_with_a_peer():
     assert peer not in peer.peers
     assert peer in server.peers
 
-    server_config = server.config()
-    peer_config = peer.config()
+    server_config = server.config
+    peer_config = peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
 
@@ -142,7 +142,7 @@ def test_server_nat_traversal():
     for line in server.post_down:
         assert 'eth1' in line
 
-    config = server.config().local_config
+    config = server.config.local_config
     assert 'PostUp' in config
     assert 'PostDown' in config
     assert 'iptables' in config
@@ -165,8 +165,8 @@ def test_dns_in_server_and_peer():
         'test-peer',
     )
 
-    server_config = server.config()
-    peer_config = peer.config()
+    server_config = server.config
+    peer_config = peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
 
@@ -276,8 +276,8 @@ def test_server_preshared_key(psk):
     assert server.preshared_key == psk
     assert peer.preshared_key == psk
 
-    server_config = server.config()
-    peer_config = peer.config()
+    server_config = server.config
+    peer_config = peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
 
@@ -314,9 +314,9 @@ def test_server_preshared_key_single_peer():
     assert peer.preshared_key == psk
     assert no_psk_peer.preshared_key is None
 
-    server_config = server.config()
-    peer_config = peer.config()
-    no_psk_peer_config = no_psk_peer.config()
+    server_config = server.config
+    peer_config = peer.config
+    no_psk_peer_config = no_psk_peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
     assert isinstance(no_psk_peer_config, Config)
@@ -350,12 +350,12 @@ def test_server_mismatched_preshared_key():
     )
 
     with pytest.raises(ValueError) as exc:
-        server_config = server.config().local_config
+        server_config = server.config.local_config
 
     assert 'keys do not match' in str(exc.value)
 
     with pytest.raises(ValueError) as exc:
-        peer_config = peer.config().local_config
+        peer_config = peer.config.local_config
 
     assert 'keys do not match' in str(exc.value)
 
@@ -381,8 +381,8 @@ def test_server_keepalive(keepalive):
     assert server.keepalive == keepalive
     assert peer.keepalive == keepalive
 
-    server_config = server.config()
-    peer_config = peer.config()
+    server_config = server.config
+    peer_config = peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
 
@@ -414,8 +414,8 @@ def test_server_keepalive_single_peer():
     assert server.keepalive is None
     assert peer.keepalive == keepalive
 
-    server_config = server.config()
-    peer_config = peer.config()
+    server_config = server.config
+    peer_config = peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
 
@@ -449,8 +449,8 @@ def test_server_mismatched_keepalive():
     assert server.keepalive == server_keepalive
     assert peer.keepalive == peer_keepalive
 
-    server_config = server.config()
-    peer_config = peer.config()
+    server_config = server.config
+    peer_config = peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
 
@@ -482,8 +482,8 @@ def test_server_mtu():
     assert server.mtu == mtu
     assert peer.mtu == mtu
 
-    server_config = server.config()
-    peer_config = peer.config()
+    server_config = server.config
+    peer_config = peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
 
@@ -543,8 +543,8 @@ def test_server_table(table):
 
     assert not peer.table
 
-    server_config = server.config()
-    peer_config = peer.config()
+    server_config = server.config
+    peer_config = peer.config
     assert isinstance(server_config, ServerConfig)
     assert isinstance(peer_config, Config)
 

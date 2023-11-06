@@ -15,3 +15,6 @@ from .peer import (
 from .server import (
     Server,
 )
+from .service import (
+    Interface,
+)
