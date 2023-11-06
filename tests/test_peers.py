@@ -11,9 +11,7 @@ from wireguard import (
     INTERFACE,
     PORT,
     Config,
-    ServerConfig,
     Peer,
-    Server,
 )
 from wireguard.utils import public_key
 

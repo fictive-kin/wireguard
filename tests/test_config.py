@@ -6,8 +6,6 @@ from unittest.mock import (
     patch,
 )
 
-from subnet import ip_network, IPv4Network, IPv4Address
-
 from wireguard import (
     Config,
     ServerConfig,

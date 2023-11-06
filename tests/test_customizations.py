@@ -4,19 +4,13 @@ import pytest
 from subnet import (
     ip_address,
     IPv4Address,
-    IPv6Address,
 )
 
 from wireguard import (
-    INTERFACE,
-    PORT,
     Config,
-    ServerConfig,
     Interface,
     Peer,
-    Server,
 )
-from wireguard.utils import public_key
 
 
 class MyCustomInterface(Interface):

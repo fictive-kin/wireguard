@@ -1,23 +1,11 @@
 
-import functools
 import json
 import pytest
 
-from subnet import (
-    ip_network,
-    IPv4Network,
-    IPv4Address,
-)
-
 from wireguard import (
-    INTERFACE,
-    PORT,
-    Config,
-    ServerConfig,
     Peer,
     Server,
 )
-from wireguard.utils import generate_key, public_key
 
 
 def test_server_json_dump_ipv4():
