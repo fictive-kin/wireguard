@@ -46,6 +46,63 @@ class PeerSet(ClassedSet):
 
         raise ValueError('Provided value must be an instance of Peer')
 
+    def discard_by_description(self, description):
+        try:
+            self.remove_by_description(description)
+        except KeyError:
+            pass
+
+    def remove_by_description(self, description):
+        for peer in self:
+            if peer.description == description:
+                self.remove(peer)
+                return
+
+        raise KeyError(description)
+
+    def discard_by_ip(self, ip):
+        try:
+            self.remove_by_ip(ip)
+        except KeyError:
+            pass
+
+    def remove_by_ip(self, ip):
+        chk_ip = ip_address(ip)
+        for peer in self:
+            if peer.ipv6 == chk_ip or peer.ipv4 == chk_ip:
+                self.remove(peer)
+                return
+
+        raise KeyError(ip)
+
+    def discard_by_private_key(self, key):
+        try:
+            self.remove_by_private_key(key)
+        except KeyError:
+            pass
+
+    def remove_by_private_key(self, key):
+        for peer in self:
+            if peer.private_key and peer.private_key == key:
+                self.remove(peer)
+                return
+
+        raise KeyError(key)
+
+    def discard_by_public_key(self, key):
+        try:
+            self.remove_by_public_key(key)
+        except KeyError:
+            pass
+
+    def remove_by_public_key(self, key):
+        for peer in self:
+            if peer.public_key == key:
+                self.remove(peer)
+                return
+
+        raise KeyError(key)
+
 
 class Peer:  # pylint: disable=too-many-instance-attributes
     """
