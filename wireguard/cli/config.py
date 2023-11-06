@@ -62,10 +62,10 @@ def server(endpoint,
         # pylint: disable=no-member
         if os.path.isfile(obj.config().full_path):
             if not click.prompt(f'{obj.config().full_path} exists! Overwrite? [y/N]'):
-                click.Abort()
+                raise click.Abort()
         if os.path.isfile(obj.config().peers_full_path):
             if not click.prompt(f'{obj.config().peers_full_path} exists! Overwrite? [y/N]'):
-                click.Abort()
+                raise click.Abort()
 
         obj.config().write()
 
@@ -128,7 +128,7 @@ def peer(name,
     if write:
         if os.path.isfile(obj.config().full_path):
             if not click.prompt(f'{obj.config().full_path} exists! Overwrite? [y/N]'):
-                click.Abort()
+                raise click.Abort()
 
         obj.config().write()
 

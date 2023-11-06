@@ -77,7 +77,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     _config = None
     peers = None
 
-    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-arguments
     def __init__(self,
                  description,
                  *,
