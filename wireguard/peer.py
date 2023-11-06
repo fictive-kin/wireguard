@@ -8,6 +8,13 @@ from subnet import (
     IPv6Address,
 )
 
+from .config import Config
+from .constants import (
+    INTERFACE,
+    KEEPALIVE_MINIMUM,
+    PORT,
+)
+from .service import Interface
 from .utils import (
     generate_key,
     find_ip_and_subnet,
@@ -16,12 +23,6 @@ from .utils import (
     IPAddressSet,
     IPNetworkSet,
     JSONEncoder,
-)
-from .config import Config
-from .constants import (
-    INTERFACE,
-    KEEPALIVE_MINIMUM,
-    PORT,
 )
 
 
@@ -164,7 +165,11 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     _table = None
 
     _config = None
+    _service = None
     peers = None
+
+    _config_cls = None
+    _service_cls = None
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-arguments
     def __init__(self,
@@ -186,10 +191,11 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                  pre_down=None,
                  post_down=None,
                  interface=None,
-                 peers=None,
-                 config_cls=None,
                  mtu=None,
                  table=None,
+                 peers=None,
+                 config_cls=None,
+                 service_cls=None,
                  ):
 
         self.allowed_ips = IPNetworkSet()
@@ -300,7 +306,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             else:
                 self.peers.add(peers)
 
-        self.config(config_cls)
+        self.config_cls = config_cls
+        self.service_cls = service_cls
 
     def __repr__(self):
         """
@@ -661,22 +668,71 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         self._table = value
 
-    def config(self, config_cls=None):
+    @property
+    def config_cls(self):
+        """
+        Returns the config_cls value
+        """
+
+        if not self._config_cls:
+            self._config_cls = Config
+
+        return self._config_cls
+
+    @config_cls.setter
+    def config_cls(self, value):
+        """
+        Sets the config_cls value
+        """
+
+        if value is not None and not issubclass(value, Config):
+            raise ValueError('Provided value must be a subclass of Config')
+
+        self._config_cls = value
+
+    @property
+    def service_cls(self):
+        """
+        Returns the service_cls value
+        """
+
+        if not self._service_cls:
+            self._service_cls = Interface
+
+        return self._service_cls
+
+    @service_cls.setter
+    def service_cls(self, value):
+        """
+        Sets the service_cls value
+        """
+
+        if value is not None and not issubclass(value, Interface):
+            raise ValueError('Provided value must be a subclass of Interface')
+
+        self._service_cls = value
+
+    @property
+    def config(self):
         """
         Return the wireguard config file for this peer
         """
 
-        if config_cls in [None, False]:
-            config_cls = Config
+        if not isinstance(self._config, self.config_cls.__class__):
+            self._config = self.config_cls(self)
 
-        if self._config is not None and isinstance(self._config, config_cls):
-            return self._config
-
-        if not callable(config_cls):
-            raise ValueError('Invalid value given for config_cls')
-
-        self._config = config_cls(self)
         return self._config
+
+    @property
+    def service(self):
+        """
+        Returns the service interface for this peer
+        """
+
+        if not isinstance(self._service, self.service_cls.__class__):
+            self._service = self.service_cls(self.interface)
+
+        return self._service
 
     def add_nat_traversal(self, outbound_interface):
         """

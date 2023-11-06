@@ -11,9 +11,7 @@ from wireguard import (
     INTERFACE,
     PORT,
     Config,
-    ServerConfig,
     Peer,
-    Server,
 )
 from wireguard.utils import public_key
 
@@ -69,7 +67,7 @@ def test_basic_peer(ipv4_address, ipv6_address):
     assert not peer.keepalive
     assert not peer.preshared_key
 
-    config = peer.config()
+    config = peer.config
     assert isinstance(config, Config)
 
     wg_config = config.local_config
@@ -139,7 +137,7 @@ def test_peer_mtu(mtu):
     assert not peer.keepalive
     assert not peer.preshared_key
 
-    config = peer.config()
+    config = peer.config
     config_lines = config.local_config.split('\n')
     assert f'MTU = {mtu}' in config_lines
 
@@ -210,7 +208,7 @@ def test_peer_dns():
     assert not peer.keepalive
     assert not peer.preshared_key
 
-    config = peer.config()
+    config = peer.config
     config_lines = config.local_config.split('\n')
     assert f'DNS = {dns}' in config_lines
 

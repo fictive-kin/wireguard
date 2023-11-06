@@ -1,20 +1,10 @@
 
 import pytest
-from unittest.mock import (
-    call,
-    mock_open,
-    patch,
-)
-
-from subnet import ip_network, IPv4Network, IPv4Address
 
 from wireguard import (
     Config,
-    ServerConfig,
     Peer,
-    Server,
 )
-from wireguard.utils import IPAddressSet
 
 
 def test_description():
@@ -285,7 +275,7 @@ def test_comments():
         comments=comments,
     )
 
-    config = peer.config()
+    config = peer.config
 
     for comment in comments:
         assert f'# {comment}' in config.local_config

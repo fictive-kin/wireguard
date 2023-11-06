@@ -1,20 +1,9 @@
 
 import pytest
-from unittest.mock import (
-    call,
-    mock_open,
-    patch,
-)
-
-from subnet import ip_network, IPv4Network, IPv4Address
 
 from wireguard import (
-    Config,
-    ServerConfig,
     Peer,
-    Server,
 )
-from wireguard.utils import IPAddressSet
 
 
 def test_peer_qrcode():
@@ -29,7 +18,7 @@ def test_peer_qrcode():
         address=address,
     )
 
-    assert peer.config().qrcode
+    assert peer.config.qrcode
 
 
 def test_peer_qrcode_not_present():
@@ -49,6 +38,6 @@ def test_peer_qrcode_not_present():
 
     # If qrcode is not present in the venv, test it fails appropriately.
     with pytest.raises(AttributeError) as exc:
-        peer.config().qrcode
+        peer.config.qrcode
 
     assert 'add the qrcode' in str(exc.value)
