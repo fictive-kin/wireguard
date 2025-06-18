@@ -35,7 +35,7 @@ if __name__ == "__main__":
         description=description,
         long_description=readme(),
         classifiers=classifiers,
-        url='https://github.com/fictivekin/wireguard',
+        url='https://github.com/fictive-kin/wireguard',
         author=author,
         author_email=email,
         maintainer=author,
