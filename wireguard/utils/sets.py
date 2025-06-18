@@ -1,4 +1,3 @@
-
 from subnet import (
     ip_address,
     ip_network,
@@ -15,9 +14,11 @@ class ClassedSet(set):
     """
 
     def _coerce_value(self, value):
-        raise NotImplementedError('ClassedSet must be not be used directly. Inherit from it, '
-                                  'with appropriate value coersion logic implemented in the '
-                                  'child class')
+        raise NotImplementedError(
+            "ClassedSet must be not be used directly. Inherit from it, "
+            "with appropriate value coersion logic implemented in the "
+            "child class"
+        )
 
     def add(self, value):
         """
@@ -25,10 +26,17 @@ class ClassedSet(set):
         """
 
         if not value:
-            raise ValueError(f'Cannot add an empty value to {self.__class__.__name__}')
+            raise ValueError(f"Cannot add an empty value to {self.__class__.__name__}")
 
-        if isinstance(value, (list, set, tuple,)):
-            raise ValueError('Provided value must not be a list')
+        if isinstance(
+            value,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
+            raise ValueError("Provided value must not be a list")
 
         super().add(self._coerce_value(value))
 
@@ -38,9 +46,16 @@ class ClassedSet(set):
         """
 
         if not values:
-            raise ValueError(f'Cannot add an empty value to {self.__class__.__name__}')
+            raise ValueError(f"Cannot add an empty value to {self.__class__.__name__}")
 
-        if not isinstance(values, (list, set, tuple,)):
+        if not isinstance(
+            values,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             values = [values]
 
         for value in values:
@@ -60,23 +75,24 @@ class IPAddressSet(ClassedSet):
         # Check for booleans specifically, as those are technically ints, and will not
         # cause `ip_address()` to raise an error
         if isinstance(value, bool):
-            raise ValueError(
-                f'Could not convert to IP Address: {type(value)}({value})')
+            raise ValueError(f"Could not convert to IP Address: {type(value)}({value})")
 
         if not isinstance(value, (IPv4Address, IPv6Address)):
             try:
                 value = ip_address(value)
             except (TypeError, ValueError) as exc:
                 raise ValueError(
-                    f'Could not convert to IP Address: {type(value)}({value})') from exc
+                    f"Could not convert to IP Address: {type(value)}({value})"
+                ) from exc
 
         return value
 
     def __str__(self):
         string_values = []
         for ip in self:  # pylint: disable=invalid-name
-            string_values.append(f'{ip.address}/{ip.max_prefixlen}')
-        return ','.join(string_values)
+            string_values.append(f"{ip.address}/{ip.max_prefixlen}")
+        return ",".join(string_values)
+
 
 class IPNetworkSet(ClassedSet):
     """
@@ -96,23 +112,23 @@ class IPNetworkSet(ClassedSet):
         # Check for booleans specifically, as those are technically ints, and will not
         # cause `ip_network()` to raise an error
         if isinstance(value, bool):
-            raise ValueError(
-                f'Could not convert to IP Network: {type(value)}({value})')
+            raise ValueError(f"Could not convert to IP Network: {type(value)}({value})")
 
         if not isinstance(value, (IPv4Network, IPv6Network)):
             try:
                 value = ip_network(value, strict=self._ip_network_strict)
             except (TypeError, ValueError) as exc:
                 raise ValueError(
-                    f'Could not convert to IP Network: {type(value)}({value})') from exc
+                    f"Could not convert to IP Network: {type(value)}({value})"
+                ) from exc
 
         return value
 
     def __str__(self):
         string_values = []
         for net in self:
-            string_values.append(f'{str(net.network_address)}/{net.prefixlen}')
-        return ','.join(string_values)
+            string_values.append(f"{str(net.network_address)}/{net.prefixlen}")
+        return ",".join(string_values)
 
 
 class NonStrictIPNetworkSet(IPNetworkSet):

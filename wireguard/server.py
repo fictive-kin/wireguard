@@ -1,4 +1,3 @@
-
 from subnet import (
     IPv4Address,
     IPv6Address,
@@ -15,12 +14,12 @@ from .utils import generate_key, public_key, find_ip_and_subnet
 
 
 INHERITABLE_OPTIONS = [
-    'dns',
-    'interface',
-    'keepalive',
-    'mtu',
-    'port',
-    'preshared_key',
+    "dns",
+    "interface",
+    "keepalive",
+    "mtu",
+    "port",
+    "preshared_key",
 ]
 
 
@@ -34,82 +33,92 @@ class Server(Peer):
     ipv4_subnet = None
     ipv6_subnet = None
 
-    def __init__(self,
-                 description,
-                 subnet,
-                 **kwargs
-            ):  # pylint: disable=too-many-branches
+    def __init__(
+        self, description, subnet, **kwargs
+    ):  # pylint: disable=too-many-branches
 
-        if not isinstance(subnet, (list, set, tuple,)):
+        if not isinstance(
+            subnet,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             subnet = [subnet]
 
         if len(subnet) > 2:
-            raise ValueError('You cannot set more than 2 core subnets: 1 IPv4 + 1 IPv6. '
-                             'Use AllowedIPs instead.')
+            raise ValueError(
+                "You cannot set more than 2 core subnets: 1 IPv4 + 1 IPv6. "
+                "Use AllowedIPs instead."
+            )
 
         addresses_from_subnets = []
         for value in subnet:
             ip, net = find_ip_and_subnet(value)  # pylint: disable=invalid-name
 
             if net is None:
-                raise ValueError(f"'{value}' does not appear to be an IPv4 or IPv6 network")
+                raise ValueError(
+                    f"'{value}' does not appear to be an IPv4 or IPv6 network"
+                )
 
             if ip is not None:
-                if 'address' in kwargs and kwargs['address'] is not None:
+                if "address" in kwargs and kwargs["address"] is not None:
                     raise ValueError(
-                        'You cannot provide both an address AND a subnet with host bits set!'
+                        "You cannot provide both an address AND a subnet with host bits set!"
                     )
 
                 addresses_from_subnets.append(ip)
 
             if net.prefixlen == net.max_prefixlen:
-                raise ValueError('You cannot use an IPv4 `/32` subnet, nor an IPv6 '
-                                 '`/128` subnet as that only gives you 1 IP address '
-                                 'to use, and therefore you cannot have any peers!')
+                raise ValueError(
+                    "You cannot use an IPv4 `/32` subnet, nor an IPv6 "
+                    "`/128` subnet as that only gives you 1 IP address "
+                    "to use, and therefore you cannot have any peers!"
+                )
 
             if net.version == 4:
                 if self.ipv4_subnet:
-                    raise ValueError('You cannot set 2 IPv4 core subnets.')
+                    raise ValueError("You cannot set 2 IPv4 core subnets.")
 
                 self.ipv4_subnet = net
 
             elif net.version == 6:
                 if self.ipv6_subnet:
-                    raise ValueError('You cannot set 2 IPv6 core subnets.')
+                    raise ValueError("You cannot set 2 IPv6 core subnets.")
 
                 self.ipv6_subnet = net
 
-        if 'address' not in kwargs:
+        if "address" not in kwargs:
             if addresses_from_subnets:
-                kwargs.update({'address': addresses_from_subnets})
+                kwargs.update({"address": addresses_from_subnets})
             else:
-                kwargs.update({'address': self.unique_address()})
+                kwargs.update({"address": self.unique_address()})
 
-        if 'config_cls' not in kwargs:
-            kwargs.update({'config_cls': ServerConfig})
+        if "config_cls" not in kwargs:
+            kwargs.update({"config_cls": ServerConfig})
 
-        if 'allowed_ips' not in kwargs or not kwargs['allowed_ips']:
-            kwargs.update({'allowed_ips': []})
-        elif not isinstance(kwargs['allowed_ips'], list):
-            kwargs['allowed_ips'] = list(kwargs['allowed_ips'])
+        if "allowed_ips" not in kwargs or not kwargs["allowed_ips"]:
+            kwargs.update({"allowed_ips": []})
+        elif not isinstance(kwargs["allowed_ips"], list):
+            kwargs["allowed_ips"] = list(kwargs["allowed_ips"])
 
         if self.ipv4_subnet:
-            kwargs['allowed_ips'].append(self.ipv4_subnet)
+            kwargs["allowed_ips"].append(self.ipv4_subnet)
         if self.ipv6_subnet:
-            kwargs['allowed_ips'].append(self.ipv6_subnet)
+            kwargs["allowed_ips"].append(self.ipv6_subnet)
 
-        super().__init__(
-            description,
-            **kwargs
-        )
+        super().__init__(description, **kwargs)
 
     def __repr__(self):
         """
         A simplistic representation of this object
         """
 
-        return (f'<{self.__class__.__name__} iface={self.interface} ipv4={self.ipv4_subnet} '
-                f'ipv6={self.ipv6_subnet} address={self.address}>')
+        return (
+            f"<{self.__class__.__name__} iface={self.interface} ipv4={self.ipv4_subnet} "
+            f"ipv6={self.ipv6_subnet} address={self.address}>"
+        )
 
     def __iter__(self):
         """
@@ -122,7 +131,7 @@ class Server(Peer):
         if self.ipv6_subnet:
             subnets.append(self.ipv6_subnet)
 
-        yield from {'subnet': subnets}.items()
+        yield from {"subnet": subnets}.items()
         yield from super().__iter__()
 
     def pubkey_exists(self, item):
@@ -219,7 +228,7 @@ class Server(Peer):
 
         while self.address_exists_ipv4(address):
             if tries >= max_address_retries:
-                raise ValueError('Too many retries to obtain an unused IPv4 address')
+                raise ValueError("Too many retries to obtain an unused IPv4 address")
 
             address = self.ipv4_subnet.random_ip()
             tries += 1
@@ -239,7 +248,7 @@ class Server(Peer):
 
         while self.address_exists_ipv6(address):
             if tries >= max_address_retries:
-                raise ValueError('Too many retries to obtain an unused IPv6 address')
+                raise ValueError("Too many retries to obtain an unused IPv6 address")
 
             address = self.ipv6_subnet.random_ip()
             tries += 1
@@ -259,19 +268,14 @@ class Server(Peer):
 
         while self.pubkey_exists(public_key(private_key)):
             if tries >= max_privkey_retries:
-                raise ValueError('Too many retries to obtain an unique private key')
+                raise ValueError("Too many retries to obtain an unique private key")
 
             private_key = generate_key()
             tries += 1
 
         return private_key
 
-    def peer(self,
-             description,
-             *,
-             peer_cls=None,
-             **kwargs
-        ):
+    def peer(self, description, *, peer_cls=None, **kwargs):
         """
         Returns a peer that is prepopulated with values appropriate for this server
         """
@@ -279,28 +283,25 @@ class Server(Peer):
         if peer_cls in [None, False]:
             peer_cls = Peer
         elif not callable(peer_cls):
-            raise ValueError('Invalid value given for peer_cls')
+            raise ValueError("Invalid value given for peer_cls")
 
-        if 'address' not in kwargs:
-            kwargs.update({'address': self.unique_address()})
+        if "address" not in kwargs:
+            kwargs.update({"address": self.unique_address()})
 
         # These are keys that should be propagated from the server to a remote peer, only
         # if they are not already being explicitly set at peer creation
         for key in INHERITABLE_OPTIONS:
             if key not in kwargs:
                 kwargs.update({key: getattr(self, key, None)})
-        if kwargs['mtu'] != self.mtu:
-            raise ValueError('MTU cannot be different between different peers')
+        if kwargs["mtu"] != self.mtu:
+            raise ValueError("MTU cannot be different between different peers")
 
-        peer = peer_cls(
-            description,
-            **kwargs
-        )
+        peer = peer_cls(description, **kwargs)
 
         self.add_peer(
             peer,
-            max_address_retries=(kwargs.get('address') is None),
-            max_privkey_retries=(kwargs.get('private_key') is None),
+            max_address_retries=(kwargs.get("address") is None),
+            max_privkey_retries=(kwargs.get("private_key") is None),
         )
         return peer
 
@@ -314,33 +315,42 @@ class Server(Peer):
             if self.address_exists_ipv4(peer.ipv4):
                 try:
                     if max_address_retries in [False, 0]:
-                        raise ValueError('Not allowed to change the peer IP address due to'
-                                         ' max_address_retries=False (or 0)')
+                        raise ValueError(
+                            "Not allowed to change the peer IP address due to"
+                            " max_address_retries=False (or 0)"
+                        )
                     peer.ipv4 = self.unique_address_ipv4(max_address_retries)
                 except ValueError as exc:
                     raise ValueError(
-                        'Could not add peer to this server. It is not unique.') from exc
+                        "Could not add peer to this server. It is not unique."
+                    ) from exc
 
         if self.ipv6_subnet and peer.ipv6:
             if self.address_exists_ipv6(peer.ipv6):
                 try:
                     if max_address_retries in [False, 0]:
-                        raise ValueError('Not allowed to change the peer IP address due to'
-                                         ' max_address_retries=False (or 0)')
+                        raise ValueError(
+                            "Not allowed to change the peer IP address due to"
+                            " max_address_retries=False (or 0)"
+                        )
                     peer.ipv6 = self.unique_address_ipv6(max_address_retries)
                 except ValueError as exc:
                     raise ValueError(
-                        'Could not add peer to this server. It is not unique.') from exc
+                        "Could not add peer to this server. It is not unique."
+                    ) from exc
 
         if self.pubkey_exists(peer.public_key):
             try:
                 if max_privkey_retries in [False, 0]:
-                    raise ValueError('Not allowed to change the peer private key due to'
-                                     ' max_privkey_retries=False (or 0)')
+                    raise ValueError(
+                        "Not allowed to change the peer private key due to"
+                        " max_privkey_retries=False (or 0)"
+                    )
                 peer.private_key = self.unique_privkey(max_privkey_retries)
             except ValueError as exc:
                 raise ValueError(
-                        'Could not add peer to this server. It is not unique.') from exc
+                    "Could not add peer to this server. It is not unique."
+                ) from exc
 
         peer.peers.add(self)  # This server needs to be a peer of the new peer
         self.peers.add(peer)  # The peer needs to be attached to this server

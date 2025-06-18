@@ -1,4 +1,3 @@
-
 import json
 
 from subnet import (
@@ -43,9 +42,9 @@ class PeerSet(ClassedSet):
             try:
                 return Peer(**value)
             except ValueError as exc:
-                raise ValueError('Provided value must be an instance of Peer') from exc
+                raise ValueError("Provided value must be an instance of Peer") from exc
 
-        raise ValueError('Provided value must be an instance of Peer')
+        raise ValueError("Provided value must be an instance of Peer")
 
     def discard_by_description(self, description):
         """
@@ -172,31 +171,32 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     _service_cls = None
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-arguments
-    def __init__(self,
-                 description,
-                 *,
-                 comments=None,
-                 address=None,
-                 endpoint=None,
-                 port=None,
-                 private_key=None,
-                 public_key=None,
-                 preshared_key=None,
-                 keepalive=None,
-                 allowed_ips=None,
-                 save_config=None,
-                 dns=None,
-                 pre_up=None,
-                 post_up=None,
-                 pre_down=None,
-                 post_down=None,
-                 interface=None,
-                 mtu=None,
-                 table=None,
-                 peers=None,
-                 config_cls=None,
-                 service_cls=None,
-                 ):
+    def __init__(
+        self,
+        description,
+        *,
+        comments=None,
+        address=None,
+        endpoint=None,
+        port=None,
+        private_key=None,
+        public_key=None,
+        preshared_key=None,
+        keepalive=None,
+        allowed_ips=None,
+        save_config=None,
+        dns=None,
+        pre_up=None,
+        post_up=None,
+        pre_down=None,
+        post_down=None,
+        interface=None,
+        mtu=None,
+        table=None,
+        peers=None,
+        config_cls=None,
+        service_cls=None,
+    ):
 
         self.allowed_ips = IPNetworkSet()
         self.dns = IPAddressSet()
@@ -209,28 +209,38 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         self.description = description
         self.comments = comments
 
-        if not isinstance(address, (list, set, tuple,)):
+        if not isinstance(
+            address,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             address = [address]
 
         if len(address) > 2:
             raise ValueError(
-                'You cannot specify more than 2 IPs for this interface: 1 IPv4 + 1 IPv6')
+                "You cannot specify more than 2 IPs for this interface: 1 IPv4 + 1 IPv6"
+            )
 
         # pylint: disable=invalid-name
         for value in address:
             ip, net = find_ip_and_subnet(value)  # pylint: disable=unused-variable
             if ip is None:
-                raise ValueError(f"'{value}' does not appear to be an IPv4 or IPv6 address")
+                raise ValueError(
+                    f"'{value}' does not appear to be an IPv4 or IPv6 address"
+                )
 
             if ip.version == 4:
                 if self.ipv4:
-                    raise ValueError('Cannot set a 2nd IPv4 address.')
+                    raise ValueError("Cannot set a 2nd IPv4 address.")
 
                 self.ipv4 = ip
 
             elif ip.version == 6:
                 if self.ipv6:
-                    raise ValueError('Cannot set a 2nd IPv6 address.')
+                    raise ValueError("Cannot set a 2nd IPv6 address.")
 
                 self.ipv6 = ip
 
@@ -313,7 +323,9 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         """
         A simplistic representation of this object
         """
-        return f'<{self.__class__.__name__} iface={self.interface} address={self.address}>'
+        return (
+            f"<{self.__class__.__name__} iface={self.interface} address={self.address}>"
+        )
 
     def __iter__(self):
         """
@@ -326,30 +338,32 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         peers = []
         for peer in self.peers:
-            peers.append({
-                'address': peer.address,
-                'description': peer.description,
-                'public_key': peer.public_key,
-            })
+            peers.append(
+                {
+                    "address": peer.address,
+                    "description": peer.description,
+                    "public_key": peer.public_key,
+                }
+            )
 
         yield from {
-            'address': self.address,
-            'allowed_ips': self.allowed_ips,
-            'description': self.description,
-            'dns': self.dns,
-            'endpoint': self.endpoint,
-            'interface': self.interface,
-            'keepalive': self.keepalive,
-            'mtu': self.mtu,
-            'peers': peers,
-            'post_down': self.post_down,
-            'post_up': self.post_up,
-            'pre_down': self.pre_down,
-            'pre_up': self.pre_up,
-            'preshared_key': self.preshared_key,
-            'private_key': self.private_key,
-            'public_key': self.public_key,
-            'table': self.table,
+            "address": self.address,
+            "allowed_ips": self.allowed_ips,
+            "description": self.description,
+            "dns": self.dns,
+            "endpoint": self.endpoint,
+            "interface": self.interface,
+            "keepalive": self.keepalive,
+            "mtu": self.mtu,
+            "peers": peers,
+            "post_down": self.post_down,
+            "post_up": self.post_up,
+            "pre_down": self.pre_down,
+            "pre_up": self.pre_up,
+            "preshared_key": self.preshared_key,
+            "private_key": self.private_key,
+            "public_key": self.public_key,
+            "table": self.table,
         }.items()
 
     def json(self, **kwargs):
@@ -357,8 +371,8 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         Produces the JSON output for this object
         """
 
-        if 'cls' not in kwargs or not kwargs['cls']:
-            kwargs['cls'] = JSONEncoder
+        if "cls" not in kwargs or not kwargs["cls"]:
+            kwargs["cls"] = JSONEncoder
 
         return json.dumps(self, **kwargs)
 
@@ -391,7 +405,14 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         Sets the comments list
         """
 
-        if not isinstance(value, (list, set, tuple,)):
+        if not isinstance(
+            value,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             value = [value]
 
         if self._comments is None:
@@ -404,7 +425,14 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         Adds a new comment(s) to the comments list
         """
 
-        if not isinstance(value, (list, set, tuple,)):
+        if not isinstance(
+            value,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             self.comments.append(value)
         else:
             self.comments.extend(value)
@@ -440,10 +468,10 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         # This is the easiest sure way to know if the port is already part of the endpoint
         # and will work for domain names, IPv4 and IPv6 addresses
-        if self._endpoint.endswith(f':{self.port}'):
+        if self._endpoint.endswith(f":{self.port}"):
             return self._endpoint
 
-        return f'{self._endpoint}:{self.port}'
+        return f"{self._endpoint}:{self.port}"
 
     @endpoint.setter
     def endpoint(self, value):
@@ -493,7 +521,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             value = ip_address(value)
 
         if value.version != 4:
-            raise ValueError('Cannot use IPv6 value to set IPv4')
+            raise ValueError("Cannot use IPv6 value to set IPv4")
 
         self._ipv4_address = value
 
@@ -519,7 +547,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             value = ip_address(value)
 
         if value.version != 6:
-            raise ValueError('Cannot use IPv4 value to set IPv6')
+            raise ValueError("Cannot use IPv4 value to set IPv6")
 
         self._ipv6_address = value
 
@@ -548,8 +576,10 @@ class Peer:  # pylint: disable=too-many-instance-attributes
             return self._private_key
 
         if self._public_key is not None and self._private_key is None:
-            raise AttributeError('Unable to retrieve private key. Public key is set,'
-                                 ' and the associated private key was not provided.')
+            raise AttributeError(
+                "Unable to retrieve private key. Public key is set,"
+                " and the associated private key was not provided."
+            )
 
         self._private_key = generate_key()
         return self._private_key
@@ -557,7 +587,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
     @private_key.setter
     def private_key(self, value):
         if value is None:
-            raise ValueError('Private key cannot be empty!')
+            raise ValueError("Private key cannot be empty!")
 
         self._private_key = value
 
@@ -573,7 +603,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         if self._private_key is not None:
             return nacl_public_key(self._private_key)
 
-        raise AttributeError('Neither public key not private key are set!')
+        raise AttributeError("Neither public key not private key are set!")
 
     @public_key.setter
     def public_key(self, value):
@@ -581,8 +611,13 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         Sets the public key for when the private key is unavailable
         """
 
-        if self._private_key is not None and nacl_public_key(self._private_key) != value:
-            raise ValueError('Cannot set public key to a value inconsistent with the private key!')
+        if (
+            self._private_key is not None
+            and nacl_public_key(self._private_key) != value
+        ):
+            raise ValueError(
+                "Cannot set public key to a value inconsistent with the private key!"
+            )
 
         self._public_key = value
 
@@ -601,7 +636,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         if value is not None:
             if not isinstance(value, int):
-                raise ValueError('Keepalive value must be an integer')
+                raise ValueError("Keepalive value must be an integer")
 
             value = max(value, KEEPALIVE_MINIMUM)
 
@@ -626,10 +661,10 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         if value is not None:
             # Check for bool specifically, because bool is a subclass of int
             if not isinstance(value, int) or isinstance(value, bool):
-                raise ValueError('MTU value must be an integer')
+                raise ValueError("MTU value must be an integer")
 
             if value < 1280 or value > 1420:
-                raise ValueError('MTU value must be in the range 1280-1420')
+                raise ValueError("MTU value must be in the range 1280-1420")
 
         self._mtu = value
 
@@ -655,16 +690,18 @@ class Peer:  # pylint: disable=too-many-instance-attributes
                 # file fail to parse correctly. We also don't want to risk `True` becoming
                 # `Table = 1` as that is probably not what the user would have wanted.
                 if isinstance(value, bool):
-                    raise TypeError('Table must not be a boolean')
+                    raise TypeError("Table must not be a boolean")
 
                 if not (0 < value < 253 or 255 < value < (2**31)):
-                    raise ValueError('Table must be in the ranges 1-252, 256-(2°31-1)')
+                    raise ValueError("Table must be in the ranges 1-252, 256-(2°31-1)")
 
             except TypeError as exc:
                 # special values allowed (auto=default, off=no route created)
                 # ref: https://git.zx2c4.com/wireguard-tools/about/src/man/wg-quick.8
-                if value not in ('auto', 'off'):
-                    raise ValueError('Table must be "auto", "off" or an integer value') from exc
+                if value not in ("auto", "off"):
+                    raise ValueError(
+                        'Table must be "auto", "off" or an integer value'
+                    ) from exc
 
         self._table = value
 
@@ -686,7 +723,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         """
 
         if value is not None and not issubclass(value, Config):
-            raise ValueError('Provided value must be a subclass of Config')
+            raise ValueError("Provided value must be a subclass of Config")
 
         self._config_cls = value
 
@@ -708,7 +745,7 @@ class Peer:  # pylint: disable=too-many-instance-attributes
         """
 
         if value is not None and not issubclass(value, Interface):
-            raise ValueError('Provided value must be a subclass of Interface')
+            raise ValueError("Provided value must be a subclass of Interface")
 
         self._service_cls = value
 
@@ -742,14 +779,14 @@ class Peer:  # pylint: disable=too-many-instance-attributes
 
         # pylint: disable=line-too-long
         post_up = [
-            f'iptables -A FORWARD -i %i -o {outbound_interface} -j ACCEPT',
-            f'iptables -A FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT',
-            f'iptables -t nat -A POSTROUTING -o {outbound_interface} -j MASQUERADE',
+            f"iptables -A FORWARD -i %i -o {outbound_interface} -j ACCEPT",
+            f"iptables -A FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT",
+            f"iptables -t nat -A POSTROUTING -o {outbound_interface} -j MASQUERADE",
         ]
         post_down = [
-            f'iptables -D FORWARD -i %i -o {outbound_interface} -j ACCEPT',
-            f'iptables -D FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT',
-            f'iptables -t nat -D POSTROUTING -o {outbound_interface} -j MASQUERADE',
+            f"iptables -D FORWARD -i %i -o {outbound_interface} -j ACCEPT",
+            f"iptables -D FORWARD -i {outbound_interface} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT",
+            f"iptables -t nat -D POSTROUTING -o {outbound_interface} -j MASQUERADE",
         ]
         # pylint: enable=line-too-long
 

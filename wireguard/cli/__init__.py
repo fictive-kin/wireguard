@@ -18,8 +18,8 @@ def cli():
     pass
 
 
-cli.add_command(config_cli, name='config')
-cli.add_command(service_cli, name='service')
+cli.add_command(config_cli, name="config")
+cli.add_command(service_cli, name="service")
 
 if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

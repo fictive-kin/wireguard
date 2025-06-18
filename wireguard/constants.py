@@ -1,6 +1,5 @@
-
-CONFIG_PATH = '/etc/wireguard'
-INTERFACE = 'wg0'
+CONFIG_PATH = "/etc/wireguard"
+INTERFACE = "wg0"
 PORT = 51820
 
 # If you really need a keepalive value less than this, you might want to rethink your life

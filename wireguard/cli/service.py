@@ -10,6 +10,7 @@ import click
 
 try:
     from hurry.filesize import size as human_size
+
     HAS_HURRY_FILESIZE = True
 except ImportError:
     HAS_HURRY_FILESIZE = False
@@ -24,7 +25,7 @@ def size(filesize, convert_from_bytes=False):
     if convert_from_bytes and HAS_HURRY_FILESIZE:
         return human_size(int(filesize))
 
-    return str(filesize) + 'B'
+    return str(filesize) + "B"
 
 
 def is_connected_repr(iface_peer, human_readable):
@@ -36,7 +37,7 @@ def is_connected_repr(iface_peer, human_readable):
     rx = size(iface_peer.rx, human_readable)  # pylint: disable=invalid-name
     state = iface_peer.is_connected
 
-    return f'<InterfacePeer interface={iface} peer={name} tx={tx} rx={rx} connected={state}>'
+    return f"<InterfacePeer interface={iface} peer={name} tx={tx} rx={rx} connected={state}>"
 
 
 @click.group()
@@ -46,12 +47,22 @@ def cli():
 
 
 @cli.command()
-@click.argument('interface')
-@click.option('-p', '--peer', help='The peer to limit stats to')
-@click.option('-v', '--verify-connected', is_flag=True, default=False,
-              help='Ping the peer to verify connectivity')
-@click.option('-h', '--human-readable', is_flag=True, default=False,
-              help='Render rx/tx bytes in KB/MB/etc, as appropriate')
+@click.argument("interface")
+@click.option("-p", "--peer", help="The peer to limit stats to")
+@click.option(
+    "-v",
+    "--verify-connected",
+    is_flag=True,
+    default=False,
+    help="Ping the peer to verify connectivity",
+)
+@click.option(
+    "-h",
+    "--human-readable",
+    is_flag=True,
+    default=False,
+    help="Render rx/tx bytes in KB/MB/etc, as appropriate",
+)
 def stats(interface, peer=None, verify_connected=False, human_readable=False):
     """
     Display the stats for the given interface

@@ -43,9 +43,9 @@ class InterfacePeer:
 
     def __init__(self, interface, peer, **data):
         if not interface:
-            raise ValueError('Interface must be supplied')
+            raise ValueError("Interface must be supplied")
         if not peer:
-            raise ValueError('Peer must be supplied')
+            raise ValueError("Peer must be supplied")
 
         self.interface = interface
         self.peer = peer
@@ -54,7 +54,7 @@ class InterfacePeer:
             self.load(data)
 
     def __repr__(self):
-        return f'<InterfacePeer iface={self.interface} peer={self.peer} tx={self.tx} rx={self.rx}>'
+        return f"<InterfacePeer iface={self.interface} peer={self.peer} tx={self.tx} rx={self.rx}>"
 
     @property
     def is_connected(self):
@@ -76,29 +76,31 @@ class InterfacePeer:
         """
 
         if not isinstance(data, dict):
-            raise ValueError('Invalid value for data. It must be a dict')
+            raise ValueError("Invalid value for data. It must be a dict")
 
         for key, value in data.items():
-            if key in ['interface', 'peer', 'load'] or key.startswith('_'):
+            if key in ["interface", "peer", "load"] or key.startswith("_"):
                 continue
 
-            if key == 'latest_handshake':
+            if key == "latest_handshake":
                 if not isinstance(value, datetime):
-                    value = datetime.fromtimestamp(int(value)).replace(tzinfo=timezone.utc)
+                    value = datetime.fromtimestamp(int(value)).replace(
+                        tzinfo=timezone.utc
+                    )
 
-            elif key == 'allowed_ips':
+            elif key == "allowed_ips":
                 if value is None:
                     continue
 
                 if not isinstance(value, (list, set, tuple)):
-                    subnets = value.split(',')
+                    subnets = value.split(",")
                 else:
                     subnets = value
 
                 value = NonStrictIPNetworkSet()
                 value.extend(subnets)
 
-                if 'ip_address' not in data and len(subnets) == 1:
+                if "ip_address" not in data and len(subnets) == 1:
                     self.ip_address = ip_interface(subnets[0]).ip
 
             setattr(self, key, value)
@@ -113,12 +115,12 @@ class Interface:
 
     def __init__(self, interface):
         if not interface:
-            raise ValueError('Interface must be supplied')
+            raise ValueError("Interface must be supplied")
 
         self.interface = interface
 
     def __repr__(self):
-        return f'<Interface iface={self.interface}>'
+        return f"<Interface iface={self.interface}>"
 
     def show(self, extra=None):
         """
@@ -126,8 +128,8 @@ class Interface:
         """
 
         cmd = [
-            'wg',
-            'show',
+            "wg",
+            "show",
             self.interface,
         ]
 
@@ -144,11 +146,13 @@ class Interface:
         Stops the WireGuard interface
         """
 
-        return _run([
-            'wg-quick',
-            'down',
-            self.interface,
-        ])
+        return _run(
+            [
+                "wg-quick",
+                "down",
+                self.interface,
+            ]
+        )
 
     def restart(self):
         """
@@ -163,35 +167,41 @@ class Interface:
         Starts the WireGuard interface
         """
 
-        return _run([
-            'wg-quick',
-            'up',
-            self.interface,
-        ])
+        return _run(
+            [
+                "wg-quick",
+                "up",
+                self.interface,
+            ]
+        )
 
     def sync(self, config_file):
         """
         Sync the configuration of the WireGuard interface with the given config file
         """
 
-        return _run([
-            'wg',
-            'syncconf',
-            self.interface,
-            config_file,
-        ])
+        return _run(
+            [
+                "wg",
+                "syncconf",
+                self.interface,
+                config_file,
+            ]
+        )
 
     def add(self, config_file):
         """
         Add the given config file's directives to the WireGuard interface
         """
 
-        return _run([
-            'wg',
-            'addconf',
-            self.interface,
-            config_file,
-        ])
+        return _run(
+            [
+                "wg",
+                "addconf",
+                self.interface,
+                config_file,
+            ]
+        )
 
     def peer(self, peer):
         """
@@ -203,13 +213,13 @@ class Interface:
         """
         Return the interface's public key
         """
-        return self.show('public-key').stdout.replace('\n', '')
+        return self.show("public-key").stdout.replace("\n", "")
 
     def dump(self):
         """
         Returns the machine-parsable state of the WireGuard interface
         """
-        return self.show('dump')
+        return self.show("dump")
 
     def stats(self):
         """
@@ -219,23 +229,25 @@ class Interface:
         public_key = self.public_key()
         output = self.dump()
         peers = {}
-        for line in output.stdout.split('\n'):
+        for line in output.stdout.split("\n"):
             if public_key in line:
                 continue
             peerstat = line.split()
             try:
                 peer = self.peer(peerstat[0])
                 data = {
-                    'preshared_key': peerstat[1] if peerstat[1] != '(none)' else None,
-                    'endpoint':  peerstat[2] if peerstat[2] != '(none)' else None,
-                    'allowed_ips': peerstat[3] if peerstat[3] != '(none)' else None,
-                    'latest_handshake': peerstat[4] if peerstat[4] else None,
-                    'rx': peerstat[5],
-                    'tx': peerstat[6],
-                    'persistent_keepalive': peerstat[7] if peerstat[7] != 'off' else False,
+                    "preshared_key": peerstat[1] if peerstat[1] != "(none)" else None,
+                    "endpoint": peerstat[2] if peerstat[2] != "(none)" else None,
+                    "allowed_ips": peerstat[3] if peerstat[3] != "(none)" else None,
+                    "latest_handshake": peerstat[4] if peerstat[4] else None,
+                    "rx": peerstat[5],
+                    "tx": peerstat[6],
+                    "persistent_keepalive": (
+                        peerstat[7] if peerstat[7] != "off" else False
+                    ),
                 }
             except IndexError:
-                print('Failed to parse:')
+                print("Failed to parse:")
                 print(line)
                 continue
 
@@ -249,9 +261,9 @@ class Interface:
         Returns the peers' public keys for this interface
         """
 
-        output = self.show('peers')
+        output = self.show("peers")
         peers = []
-        for line in output.stdout.split('\n'):
+        for line in output.stdout.split("\n"):
             peers.append(self.peer(line))
 
         return peers
@@ -266,9 +278,9 @@ def ping(host):
     """
 
     # Option for the number of packets as a function of
-    param = '-n' if platform.system().lower() == 'windows' else '-c'
+    param = "-n" if platform.system().lower() == "windows" else "-c"
 
     # Building the command. Ex: "ping -c 1 google.com"
-    command = ['ping', param, '1', '-W', '1', host]
+    command = ["ping", param, "1", "-W", "1", host]
 
     return _run(command)

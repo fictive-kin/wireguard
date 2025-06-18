@@ -1,5 +1,3 @@
-
-
 from .config import (
     Config,
     ServerConfig,
