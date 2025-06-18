@@ -4,7 +4,7 @@ wireguard.cli.config
 Interaction with the config files
 """
 
-# pylint: disable=too-many-arguments,unnecessary-pass
+# pylint: disable=too-many-arguments,too-many-positional-arguments,unnecessary-pass
 
 import os
 
