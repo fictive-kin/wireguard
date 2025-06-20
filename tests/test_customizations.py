@@ -1,5 +1,4 @@
-
-import pytest
+import pytest  # pylint: disable=import-error
 
 from subnet import (
     ip_address,
@@ -22,11 +21,11 @@ class MyCustomConfig(Config):
 
 
 def test_peer_custom_config_cls():
-    address = '192.168.0.2'
-    dns = '1.1.1.1'
+    address = "192.168.0.2"
+    dns = "1.1.1.1"
 
     peer = Peer(
-        'test-peer',
+        "test-peer",
         address=address,
         dns=ip_address(dns),
         config_cls=MyCustomConfig,
@@ -36,19 +35,19 @@ def test_peer_custom_config_cls():
 
 
 @pytest.mark.parametrize(
-    ('cls',),
+    ("cls",),
     [
         (MyCustomInterface,),
         (IPv4Address,),
     ],
 )
 def test_peer_invalid_custom_config_cls(cls):
-    address = '192.168.0.2'
-    dns = '1.1.1.1'
+    address = "192.168.0.2"
+    dns = "1.1.1.1"
 
     with pytest.raises(ValueError):
-        peer = Peer(
-            'test-peer',
+        Peer(
+            "test-peer",
             address=address,
             dns=ip_address(dns),
             config_cls=cls,
@@ -56,11 +55,11 @@ def test_peer_invalid_custom_config_cls(cls):
 
 
 def test_peer_custom_service_cls():
-    address = '192.168.0.2'
-    dns = '1.1.1.1'
+    address = "192.168.0.2"
+    dns = "1.1.1.1"
 
     peer = Peer(
-        'test-peer',
+        "test-peer",
         address=address,
         dns=ip_address(dns),
         service_cls=MyCustomInterface,
@@ -70,19 +69,19 @@ def test_peer_custom_service_cls():
 
 
 @pytest.mark.parametrize(
-    ('cls',),
+    ("cls",),
     [
         (MyCustomConfig,),
         (IPv4Address,),
     ],
 )
 def test_peer_invalid_custom_service_cls(cls):
-    address = '192.168.0.2'
-    dns = '1.1.1.1'
+    address = "192.168.0.2"
+    dns = "1.1.1.1"
 
     with pytest.raises(ValueError):
-        peer = Peer(
-            'test-peer',
+        Peer(
+            "test-peer",
             address=address,
             dns=ip_address(dns),
             service_cls=cls,
