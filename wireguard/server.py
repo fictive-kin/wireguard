@@ -1,19 +1,30 @@
+import typing as t
+
 from subnet import (
     IPv4Address,
     IPv6Address,
+    IPv4Network,
+    IPv6Network,
     ip_address,
 )
 
+from .base import BasePeer
 from .constants import (
     MAX_ADDRESS_RETRIES,
     MAX_PRIVKEY_RETRIES,
 )
 from .config import ServerConfig
 from .peer import Peer
-from .utils import generate_key, public_key, find_ip_and_subnet
+from .utils import (
+    generate_key,
+    public_key,
+    find_ip_and_subnet,
+    IPAddressSet,
+    IPNetworkSet,
+)
 
 
-INHERITABLE_OPTIONS = [
+INHERITABLE_OPTIONS: t.List[str] = [
     "dns",
     "interface",
     "keepalive",
@@ -30,11 +41,19 @@ class Server(Peer):
     While not required to have a server<->client setup, this class simplifies doing so
     """
 
-    ipv4_subnet = None
-    ipv6_subnet = None
+    ipv4_subnet: t.Union[IPv4Network, None] = None
+    ipv6_subnet: t.Union[IPv6Network, None] = None
 
     def __init__(
-        self, description, subnet, **kwargs
+        self,
+        description: str,
+        subnet: t.Union[
+            str,
+            IPv4Network,
+            IPv6Network,
+            t.List[t.Union[str, IPv4Network, IPv6Network]],
+        ] = None,
+        **kwargs,
     ):  # pylint: disable=too-many-branches
 
         if not isinstance(
@@ -110,7 +129,7 @@ class Server(Peer):
 
         super().__init__(description, **kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         A simplistic representation of this object
         """
@@ -120,7 +139,23 @@ class Server(Peer):
             f"ipv6={self.ipv6_subnet} address={self.address}>"
         )
 
-    def __iter__(self):
+    def __iter__(self) -> t.Generator[
+        dict[
+            str,
+            t.Union[
+                bool,
+                int,
+                str,
+                t.List[str],
+                t.List[t.Dict[str, t.Any]],
+                IPAddressSet,
+                IPNetworkSet,
+                None,
+            ],
+        ],
+        None,
+        None,
+    ]:
         """
         Iterates through this server's useful attributes
         """
@@ -134,7 +169,7 @@ class Server(Peer):
         yield from {"subnet": subnets}.items()
         yield from super().__iter__()
 
-    def pubkey_exists(self, item):
+    def pubkey_exists(self, item: str) -> bool:
         """
         Checks a public key against the public keys already used by this server and it's peers
         """
@@ -144,7 +179,7 @@ class Server(Peer):
 
         return item in self.peers_pubkeys
 
-    def address_exists_ipv4(self, item):
+    def address_exists_ipv4(self, item: t.Union[str, IPv4Address]) -> bool:
         """
         Checks an IPv4 address against the addresses already used by this server and it's peers
         """
@@ -157,7 +192,7 @@ class Server(Peer):
 
         return item in self.peers_addresses_ipv4
 
-    def address_exists_ipv6(self, item):
+    def address_exists_ipv6(self, item: t.Union[str, IPv6Address]) -> bool:
         """
         Checks an IPv6 address against the addresses already used by this server and it's peers
         """
@@ -171,7 +206,7 @@ class Server(Peer):
         return item in self.peers_addresses_ipv6
 
     @property
-    def peers_addresses_ipv4(self):
+    def peers_addresses_ipv4(self) -> t.List[IPv4Address]:
         """
         Returns all the IPv4 addresses for the peers attached to this server
         """
@@ -181,7 +216,7 @@ class Server(Peer):
         return [peer.ipv4 for peer in self.peers]
 
     @property
-    def peers_addresses_ipv6(self):
+    def peers_addresses_ipv6(self) -> t.List[IPv6Address]:
         """
         Returns all the IPv6 addresses for the peers attached to this server
         """
@@ -191,7 +226,7 @@ class Server(Peer):
         return [peer.ipv6 for peer in self.peers]
 
     @property
-    def peers_pubkeys(self):
+    def peers_pubkeys(self) -> t.List[str]:
         """
         Returns all the public keys for the peers attached to this server
         """
@@ -200,7 +235,9 @@ class Server(Peer):
             return []
         return [peer.public_key for peer in self.peers]
 
-    def unique_address(self, max_address_retries=None):
+    def unique_address(
+        self, max_address_retries: t.Union[int, None] = None
+    ) -> t.List[t.Union[IPv4Address, IPv6Address]]:
         """
         Return unused addresses from this server's subnets (1 IPv4 + 1 IPv6, if applicable)
         """
@@ -215,7 +252,9 @@ class Server(Peer):
 
         return addresses
 
-    def unique_address_ipv4(self, max_address_retries=None):
+    def unique_address_ipv4(
+        self, max_address_retries: t.Union[int, None] = None
+    ) -> IPv4Address:
         """
         Return an unused address from this server's IPv4 subnet
         """
@@ -235,7 +274,9 @@ class Server(Peer):
 
         return address
 
-    def unique_address_ipv6(self, max_address_retries=None):
+    def unique_address_ipv6(
+        self, max_address_retries: t.Union[int, None] = None
+    ) -> IPv6Address:
         """
         Return an unused address from this server's IPv6 subnet
         """
@@ -255,7 +296,7 @@ class Server(Peer):
 
         return address
 
-    def unique_privkey(self, max_privkey_retries=None):
+    def unique_privkey(self, max_privkey_retries: t.Union[int, None] = None) -> str:
         """
         Returns a private key that is not already in use among this server's peers
         """
@@ -275,7 +316,13 @@ class Server(Peer):
 
         return private_key
 
-    def peer(self, description, *, peer_cls=None, **kwargs):
+    def peer(
+        self,
+        description: str,
+        *,
+        peer_cls: t.Union[BasePeer, t.Callable, None] = None,
+        **kwargs,
+    ) -> Peer:
         """
         Returns a peer that is prepopulated with values appropriate for this server
         """
@@ -305,7 +352,12 @@ class Server(Peer):
         )
         return peer
 
-    def add_peer(self, peer, max_address_retries=None, max_privkey_retries=None):
+    def add_peer(
+        self,
+        peer: BasePeer,
+        max_address_retries: t.Union[int, None] = None,
+        max_privkey_retries: t.Union[int, None] = None,
+    ) -> None:
         """
         Adds a peer to this server, checking for a unique IP address + unique private key
         and optionally updating the peer's data to obtain uniqueness

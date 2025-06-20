@@ -1,3 +1,4 @@
+import typing as t
 from subnet import (
     ip_address,
     ip_network,
@@ -13,14 +14,14 @@ class ClassedSet(set):
     A set that requires members be of a specific class
     """
 
-    def _coerce_value(self, value):
+    def _coerce_value(self, value: t.Any) -> t.Any:
         raise NotImplementedError(
             "ClassedSet must be not be used directly. Inherit from it, "
             "with appropriate value coersion logic implemented in the "
             "child class"
         )
 
-    def add(self, value):
+    def add(self, value: t.Any) -> None:
         """
         Adds a value to this collection, maintaining uniqueness
         """
@@ -40,7 +41,7 @@ class ClassedSet(set):
 
         super().add(self._coerce_value(value))
 
-    def extend(self, values):
+    def extend(self, values: t.List[t.Any]) -> None:
         """
         Adds multiple values to this collection, maintaining uniqueness
         """
@@ -67,7 +68,9 @@ class IPAddressSet(ClassedSet):
     A set of IPv4Address/IPv6Address objects
     """
 
-    def _coerce_value(self, value):
+    def _coerce_value(
+        self, value: t.Union[str, IPv4Address, IPv6Address]
+    ) -> t.Union[IPv4Address, IPv6Address]:
         """
         Coerce given values into an IP Address object
         """
@@ -87,11 +90,19 @@ class IPAddressSet(ClassedSet):
 
         return value
 
-    def __str__(self):
+    def __str__(self) -> str:
         string_values = []
         for ip in self:  # pylint: disable=invalid-name
-            string_values.append(f"{ip.address}/{ip.max_prefixlen}")
+            string_values.append(f"{ip}/{ip.max_prefixlen}")
         return ",".join(string_values)
+
+    def sorted(self) -> t.List[t.Union[IPv4Address, IPv6Address]]:
+        """
+        Sorts the networks in this set by their network address
+        """
+
+        # pylint: disable=unnecessary-lambda
+        return sorted(self, key=lambda item: str(item))
 
 
 class IPNetworkSet(ClassedSet):
@@ -101,7 +112,9 @@ class IPNetworkSet(ClassedSet):
 
     _ip_network_strict = True
 
-    def _coerce_value(self, value):
+    def _coerce_value(
+        self, value: t.Union[str, IPv4Network, IPv6Network]
+    ) -> t.Union[IPv4Network, IPv6Network]:
         """
         Coerce given values into an IP Network object
 
@@ -124,11 +137,19 @@ class IPNetworkSet(ClassedSet):
 
         return value
 
-    def __str__(self):
+    def __str__(self) -> str:
         string_values = []
         for net in self:
             string_values.append(f"{str(net.network_address)}/{net.prefixlen}")
         return ",".join(string_values)
+
+    def sorted(self) -> t.List[t.Union[IPv4Network, IPv6Network]]:
+        """
+        Sorts the networks in this set by their network address
+        """
+
+        # pylint: disable=unnecessary-lambda
+        return sorted(self, key=lambda item: str(item))
 
 
 class NonStrictIPNetworkSet(IPNetworkSet):

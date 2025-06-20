@@ -2,14 +2,14 @@ from base64 import b64encode, b64decode
 from nacl.public import PrivateKey
 
 
-def generate_key():
+def generate_key() -> str:
     """Generates a new private key"""
 
     private = PrivateKey.generate()
     return b64encode(bytes(private)).decode("ascii")
 
 
-def public_key(private_key):
+def public_key(private_key: str) -> str:
     """Given a private key, returns the corresponding public key"""
 
     private = PrivateKey(b64decode(private_key))

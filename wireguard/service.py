@@ -8,20 +8,22 @@ NOTE: This functionality requires sufficient privileges to run the wg command
       the web server user. If you do, it is at your own risk.
 """
 
+import typing as t
 import platform
 import subprocess
 
 from datetime import datetime, timezone
 from subnet import ip_interface
 
+from .base import BasePeer
 from .utils.sets import NonStrictIPNetworkSet
 
 
-def _run(cmd):
+def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     """
     Run a system command with the appropriate settings for how the code wants the output
     """
-    return subprocess.run(cmd, text=True, check=True, capture_output=True)
+    return subprocess.run(cmd, text=True, check=True, capture_output=True, **kwargs)
 
 
 class InterfacePeer:
@@ -29,19 +31,21 @@ class InterfacePeer:
     A peer that is currently configured on the WireGuard interface
     """
 
-    interface = None
-    peer = None
+    interface: t.Union[str, None] = None
+    peer: t.Union[BasePeer, None] = None
 
-    ip_address = None
-    preshared_key = None
-    endpoint = None
-    allowed_ips = []
-    latest_handshake = None
-    rx = 0
-    tx = 0
-    persistent_keepalive = False
+    ip_address: t.Union[str, None] = None
+    preshared_key: t.Union[str, None] = None
+    endpoint: t.Union[str, None] = None
+    allowed_ips: t.Union[t.List[str], None] = None
+    latest_handshake: t.Union[datetime, None] = None
+    rx: int = 0
+    tx: int = 0
+    persistent_keepalive: bool = False
 
-    def __init__(self, interface, peer, **data):
+    def __init__(self, interface: str, peer: BasePeer, **data):
+        self.allowed_ips = []
+
         if not interface:
             raise ValueError("Interface must be supplied")
         if not peer:
@@ -57,7 +61,7 @@ class InterfacePeer:
         return f"<InterfacePeer iface={self.interface} peer={self.peer} tx={self.tx} rx={self.rx}>"
 
     @property
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """
         If enough data is present, ping the host over the WireGuard connection to determine
         that it is connected. Otherwise, returns False.
@@ -70,7 +74,7 @@ class InterfacePeer:
                 pass
         return False
 
-    def load(self, data):
+    def load(self, data: dict) -> None:
         """
         Load this object with the provided data
         """
@@ -111,18 +115,18 @@ class Interface:
     A currently configured WireGuard interface on this host
     """
 
-    interface = None
+    interface: t.Union[str, None] = None
 
-    def __init__(self, interface):
+    def __init__(self, interface: str):
         if not interface:
             raise ValueError("Interface must be supplied")
 
         self.interface = interface
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Interface iface={self.interface}>"
 
-    def show(self, extra=None):
+    def show(self, extra: t.Union[str, None] = None) -> subprocess.CompletedProcess:
         """
         Returns the state of the WireGuard interface
         """
@@ -141,7 +145,7 @@ class Interface:
 
         return _run(cmd)
 
-    def stop(self):
+    def stop(self) -> subprocess.CompletedProcess:
         """
         Stops the WireGuard interface
         """
@@ -154,7 +158,7 @@ class Interface:
             ]
         )
 
-    def restart(self):
+    def restart(self) -> subprocess.CompletedProcess:
         """
         Restarts the WireGuard interface
         """
@@ -162,7 +166,7 @@ class Interface:
         self.stop()
         return self.start()
 
-    def start(self):
+    def start(self) -> subprocess.CompletedProcess:
         """
         Starts the WireGuard interface
         """
@@ -175,7 +179,7 @@ class Interface:
             ]
         )
 
-    def sync(self, config_file):
+    def sync(self, config_file: str) -> subprocess.CompletedProcess:
         """
         Sync the configuration of the WireGuard interface with the given config file
         """
@@ -189,7 +193,7 @@ class Interface:
             ]
         )
 
-    def add(self, config_file):
+    def add(self, config_file: str) -> subprocess.CompletedProcess:
         """
         Add the given config file's directives to the WireGuard interface
         """
@@ -203,25 +207,25 @@ class Interface:
             ]
         )
 
-    def peer(self, peer):
+    def peer(self, peer: BasePeer) -> InterfacePeer:
         """
         Returns a peer, prepopulated for this interface
         """
         return InterfacePeer(self.interface, peer)
 
-    def public_key(self):
+    def public_key(self) -> str:
         """
         Return the interface's public key
         """
         return self.show("public-key").stdout.replace("\n", "")
 
-    def dump(self):
+    def dump(self) -> subprocess.CompletedProcess:
         """
         Returns the machine-parsable state of the WireGuard interface
         """
         return self.show("dump")
 
-    def stats(self):
+    def stats(self) -> t.Dict[str, InterfacePeer]:
         """
         Returns statistics about the configured peers for the interface
         """
@@ -256,7 +260,7 @@ class Interface:
 
         return peers
 
-    def peers(self):
+    def peers(self) -> t.List[str]:
         """
         Returns the peers' public keys for this interface
         """
@@ -269,7 +273,7 @@ class Interface:
         return peers
 
 
-def ping(host):
+def ping(host: str) -> subprocess.CompletedProcess:
     """
     Ref: https://stackoverflow.com/questions/2953462/pinging-servers-in-python/32684938#32684938
 

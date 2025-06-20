@@ -1,3 +1,4 @@
+import typing as t
 from subnet import (
     ip_address,
     ip_network,
@@ -8,7 +9,11 @@ from subnet import (
 )
 
 
-def find_ip_and_subnet(value):
+def find_ip_and_subnet(
+    value: t.Union[str, IPv4Address, IPv6Address, IPv4Network, IPv6Network],
+) -> tuple[
+    t.Union[IPv4Address, IPv6Address, None], t.Union[IPv4Network, IPv6Network, None]
+]:
     """
     Returns an IP and the subnet from a value
 

@@ -30,9 +30,12 @@ class JSONEncoder(json.JSONEncoder):
         if isinstance(o, ClassedSet):
             return list(o)
 
-        from ..peer import Peer  # pylint: disable=import-outside-toplevel,cyclic-import
+        # pylint: disable=import-outside-toplevel,cyclic-import
+        from ..base import (
+            BasePeer,
+        )
 
-        if isinstance(o, Peer):
+        if isinstance(o, BasePeer):
             return dict(o)
 
         return super().default(o)

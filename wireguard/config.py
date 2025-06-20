@@ -1,3 +1,4 @@
+import typing as t
 import os
 
 try:
@@ -7,16 +8,15 @@ try:
 except ImportError:
     HAS_QRCODE = False
 
+from .base import BasePeer
+from .constants import CONFIG_PATH
 from .utils import (
     value_list_to_comma,
     value_list_to_multiple,
 )
-from .constants import (
-    CONFIG_PATH,
-)
 
 
-INTERFACE_KEYS = (
+INTERFACE_KEYS: t.Tuple[str, ...] = (
     "address",
     "dns",
     "port",
@@ -31,7 +31,7 @@ INTERFACE_KEYS = (
     "comments",  # We want this to be the last line/chunk in the output
 )
 
-PEER_KEYS = (
+PEER_KEYS: t.Tuple[str, ...] = (
     "description",  # We want this to be the first key in the output
     "allowed_ips",
     "endpoint",
@@ -49,7 +49,7 @@ class Config:  # pylint: disable=too-many-public-methods
 
     _peer = None
 
-    def __init__(self, peer):
+    def __init__(self, peer: BasePeer):
         # These 2 attributes are the bare minimum allowed to create a remote peer
         if not (hasattr(peer, "allowed_ips") and hasattr(peer, "public_key")):
             raise ValueError("You must provide a valid Peer, or subclass thereof")
@@ -57,7 +57,7 @@ class Config:  # pylint: disable=too-many-public-methods
         self._peer = peer
 
     @property
-    def allowed_ips(self):
+    def allowed_ips(self) -> t.Union[str, None]:
         """
         Returns the subnets that the remote peer should route to this peer
         """
@@ -68,7 +68,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return value_list_to_comma("AllowedIPs", self._peer.allowed_ips)
 
     @property
-    def dns(self):
+    def dns(self) -> t.Union[str, None]:
         """
         Returns the DNS settings of the given peer for the config file
         """
@@ -79,7 +79,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return value_list_to_comma("DNS", self._peer.dns)
 
     @property
-    def pre_up(self):
+    def pre_up(self) -> t.Union[str, None]:
         """
         Returns the PreUp settings of the given peer for the config file
         """
@@ -90,7 +90,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return value_list_to_multiple("PreUp", self._peer.pre_up)
 
     @property
-    def pre_down(self):
+    def pre_down(self) -> t.Union[str, None]:
         """
         Returns the PreDown settings of the given peer for the config file
         """
@@ -101,7 +101,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return value_list_to_multiple("PreDown", self._peer.pre_down)
 
     @property
-    def post_up(self):
+    def post_up(self) -> t.Union[str, None]:
         """
         Returns the PostUp settings of the given peer for the config file
         """
@@ -112,7 +112,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return value_list_to_multiple("PostUp", self._peer.post_up)
 
     @property
-    def post_down(self):
+    def post_down(self) -> t.Union[str, None]:
         """
         Returns the PostDown settings of the given peer for the config file
         """
@@ -123,7 +123,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return value_list_to_multiple("PostDown", self._peer.post_down)
 
     @property
-    def preshared_key(self):
+    def preshared_key(self) -> t.Union[str, None]:
         """
         Returns the PresharedKey for this peer
         """
@@ -134,21 +134,21 @@ class Config:  # pylint: disable=too-many-public-methods
         return f"PresharedKey = {self._peer.preshared_key}"
 
     @property
-    def private_key(self):
+    def private_key(self) -> str:
         """
         Returns the PrivateKey for this peer
         """
         return f"PrivateKey = {self._peer.private_key}"
 
     @property
-    def public_key(self):
+    def public_key(self) -> str:
         """
         Returns the PublicKey for this peer
         """
         return f"PublicKey = {self._peer.public_key}"
 
     @property
-    def save_config(self):
+    def save_config(self) -> t.Union[str, None]:
         """
         Returns the SaveConfig for this peer
         """
@@ -160,7 +160,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return f"SaveConfig = {value}"
 
     @property
-    def endpoint(self):
+    def endpoint(self) -> t.Union[str, None]:
         """
         Returns the endpoint for this peer
         """
@@ -171,14 +171,14 @@ class Config:  # pylint: disable=too-many-public-methods
         return f"Endpoint = {self._peer.endpoint}"
 
     @property
-    def port(self):
+    def port(self) -> str:
         """
         Returns the Port for this peer
         """
         return f"ListenPort = {self._peer.port}"
 
     @property
-    def keepalive(self):
+    def keepalive(self) -> t.Union[str, None]:
         """
         Returns the PersistentKeepalive for this peer
         """
@@ -189,7 +189,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return f"PersistentKeepalive = {self._peer.keepalive}"
 
     @property
-    def address(self):
+    def address(self) -> t.Union[str, None]:
         """
         Returns the Address for this peer
         """
@@ -201,7 +201,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return value_list_to_comma("Address", values)
 
     @property
-    def description(self):
+    def description(self) -> t.Union[str, None]:
         """
         Returns the name/description for this peer as a comment
         """
@@ -212,7 +212,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return f"# {self._peer.description}"
 
     @property
-    def comments(self):
+    def comments(self) -> t.Union[str, None]:
         """
         Returns any comments that should be present in the generated file
         """
@@ -223,7 +223,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return value_list_to_multiple("#", self._peer.comments, key_value_separator=" ")
 
     @property
-    def mtu(self):
+    def mtu(self) -> t.Union[str, None]:
         """
         Returns the mtu for this peer
         """
@@ -234,7 +234,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return f"MTU = {self._peer.mtu}"
 
     @property
-    def table(self):
+    def table(self) -> t.Union[str, None]:
         """
         Returns the table for this peer
         """
@@ -245,7 +245,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return f"Table = {self._peer.table}"
 
     @property
-    def interface(self):
+    def interface(self) -> str:
         """
         Returns the Interface section of the config file
         """
@@ -259,7 +259,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return os.linesep.join(data)
 
     @property
-    def peers(self):
+    def peers(self) -> str:
         """
         Returns the Peer sections for all connectable peers
         """
@@ -306,7 +306,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return peers_data
 
     @property
-    def remote_config(self):
+    def remote_config(self) -> t.Union[str, None]:
         """
         Returns the Peer section for use in a remote peer's config file
         """
@@ -327,7 +327,7 @@ class Config:  # pylint: disable=too-many-public-methods
         return os.linesep.join(data)
 
     @property
-    def local_config(self):
+    def local_config(self) -> t.Union[str, None]:
         """
         Returns the full WireGuard config
         """
@@ -340,7 +340,7 @@ class Config:  # pylint: disable=too-many-public-methods
         )
 
     @property
-    def qrcode(self):
+    def qrcode(self) -> "qrcode.image.base.BaseImage":
         """
         Returns a QR Code of this peer's configuration
         """
@@ -354,13 +354,13 @@ class Config:  # pylint: disable=too-many-public-methods
         return qrcode.make(self.local_config)
 
     @property
-    def filename(self):
+    def filename(self) -> str:
         """
         Returns the file name of the WireGuard config file
         """
         return f"{self._peer.interface}.conf"
 
-    def full_path(self, config_path=None):
+    def full_path(self, config_path=None) -> str:
         """
         Returns the full path to the WireGuard config file
         """
@@ -369,7 +369,7 @@ class Config:  # pylint: disable=too-many-public-methods
             config_path = CONFIG_PATH
         return os.path.join(config_path, self.filename)
 
-    def write(self, config_path=None):
+    def write(self, config_path: t.Union[str, None] = None) -> None:
         """
         Writes the WireGuard config file
         """
@@ -387,7 +387,7 @@ class ServerConfig(Config):
     """
 
     @property
-    def address(self):
+    def address(self) -> t.Union[str, None]:
         """
         Returns the Address for this Server
         """
@@ -402,13 +402,13 @@ class ServerConfig(Config):
         return value_list_to_comma("Address", values)
 
     @property
-    def peers_filename(self):
+    def peers_filename(self) -> str:
         """
         Returns the peers config file name
         """
         return f"{self._peer.interface}-peers.conf"
 
-    def peers_full_path(self, config_path=None):
+    def peers_full_path(self, config_path: t.Union[str, None] = None) -> str:
         """
         Returns the full path to the peers config file
         """
@@ -416,7 +416,7 @@ class ServerConfig(Config):
             config_path = CONFIG_PATH
         return os.path.join(config_path, self.peers_filename)
 
-    def write(self, config_path=None):
+    def write(self, config_path: t.Union[str, None] = None) -> None:
         """
         Write out the main config and the peers config files
         """

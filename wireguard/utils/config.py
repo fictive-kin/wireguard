@@ -1,7 +1,8 @@
+import typing as t
 import os
 
 
-def value_list_to_comma(ini_key, values):
+def value_list_to_comma(ini_key: str, values: list[t.Any]) -> str:
     """
     Returns a comma separated list for use as a value in a WireGuard config file
     """
@@ -20,7 +21,9 @@ def value_list_to_comma(ini_key, values):
     return f"{ini_key} = {values}"
 
 
-def value_list_to_multiple(ini_key, values, key_value_separator=" = "):
+def value_list_to_multiple(
+    ini_key: str, values: list[t.Any], key_value_separator: str = " = "
+) -> str:
     """
     Returns multiple config lines for a given list of values
     """
